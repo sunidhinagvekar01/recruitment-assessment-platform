@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Register — RecruitAssess{% endblock %}
+{% block content %}
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px">
+  <div style="width:420px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:32px;font-weight:800;color:#818cf8;letter-spacing:-1px;margin-bottom:6px">RecruitAssess</div>
+      <p style="font-size:14px;color:#64748b">Create your candidate account</p>
+    </div>
+    <div class="card">
+      {% if error %}<div class="alert-error">{{ error }}</div>{% endif %}
+      <form method="POST">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" name="name" required placeholder="Your full name">
+        </div>
+        <div class="form-group">
+          <label>Email address</label>
+          <input type="email" name="email" required placeholder="you@email.com">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" name="password" required placeholder="Choose a password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;margin-top:8px">Create Account</button>
+      </form>
+    </div>
+    <p style="text-align:center;font-size:13px;color:#64748b;margin-top:16px">
+      Already registered? <a href="/login" style="color:#818cf8;text-decoration:none">Sign in</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

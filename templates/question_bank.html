@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Question Bank{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <h1>📚 Question Bank</h1>
+
+    <div style="margin-bottom:20px">
+        <a href="/recruiter/question-bank/add" class="btn btn-primary">
+            + Add Question
+        </a>
+    </div>
+
+    <p>Total Questions: {{ questions|length }}</p>
+
+    <div class="card" style="margin-bottom:20px;padding:16px">
+        <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap">
+
+            <input
+                type="text"
+                name="search"
+                placeholder="Search questions..."
+                value="{{ request.args.get('search','') }}"
+                style="padding:10px;width:250px"
+            >
+
+            <select name="category">
+                <option value="">All Categories</option>
+                <option value="Python">Python</option>
+                <option value="Statistics">Statistics</option>
+                <option value="Machine Learning">Machine Learning</option>
+                <option value="EDA">EDA</option>
+                <option value="Visualization">Visualization</option>
+            </select>
+
+            <select name="difficulty">
+                <option value="">All Difficulties</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">
+                Filter
+            </button>
+
+        </form>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Question</th>
+                <th>Category</th>
+                <th>Difficulty</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for q in questions %}
+            <tr>
+                <td>{{ q.id }}</td>
+                <td>{{ q.question_text }}</td>
+                <td>{{ q.category }}</td>
+                <td>{{ q.difficulty }}</td>
+
+                <td>
+                    <a href="/recruiter/question-bank/edit/{{ q.id }}"
+                       class="btn btn-outline btn-sm">
+                       Edit
+                    </a>
+
+                    <a href="/recruiter/question-bank/delete/{{ q.id }}"
+                       class="btn btn-danger btn-sm"
+                       onclick="return confirm('Delete this question?')">
+                       Delete
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

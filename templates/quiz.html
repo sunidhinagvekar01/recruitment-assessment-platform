@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+{% block title %}{{ assessment.title }}{% endblock %}
+{% block head %}
+<style>
+  body { display:flex; flex-direction:column; }
+  .quiz-wrap { flex:1; display:flex; align-items:flex-start; justify-content:center; padding:32px 20px; }
+  .quiz-box { background:#1e293b; border:1px solid #334155; border-radius:16px; padding:36px; width:700px; max-width:100%; }
+  .top-bar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+  .q-count { font-size:13px; color:#94a3b8; }
+  .timer { background:#0f172a; border:1px solid #334155; border-radius:8px; padding:6px 14px; font-size:14px; font-weight:600; color:#38bdf8; min-width:70px; text-align:center; }
+  .progress-bar { width:100%; height:5px; background:#334155; border-radius:99px; margin-bottom:6px; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#6366f1,#8b5cf6); border-radius:99px; transition:width .4s ease; }
+  .progress-label { font-size:11px; color:#475569; text-align:right; margin-bottom:24px; }
+  .cat-badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 12px; border-radius:99px; margin-bottom:14px; letter-spacing:.6px; text-transform:uppercase; }
+  .diff-tag { display:inline-block; font-size:10px; padding:2px 8px; border-radius:4px; font-weight:600; margin-left:8px; vertical-align:middle; }
+  .q-text { font-size:17px; font-weight:500; line-height:1.6; margin-bottom:24px; color:#f1f5f9; }
+  .options { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .opt-btn { background:#0f172a; border:1.5px solid #334155; border-radius:10px; padding:13px 16px; cursor:pointer; font-size:14px; color:#cbd5e1; transition:all .2s; text-align:left; display:flex; align-items:center; gap:12px; width:100%; }
+  .opt-letter { width:26px; height:26px; border-radius:6px; background:#1e293b; border:1px solid #334155; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#64748b; flex-shrink:0; }
+  .opt-btn:hover:not(:disabled) { border-color:#6366f1; }
+  .opt-btn.correct { border-color:#22c55e; background:#052e16; color:#bbf7d0; }
+  .opt-btn.wrong   { border-color:#ef4444; background:#2d0a0a; color:#fecaca; }
+  .explanation { background:#0f172a; border:1px solid #334155; border-left:3px solid #6366f1; border-radius:8px; padding:14px; margin-bottom:20px; font-size:13px; color:#94a3b8; line-height:1.6; display:none; }
+  .btn-row { display:flex; justify-content:space-between; align-items:center; }
+  .nav-dots { display:flex; gap:4px; flex-wrap:wrap; max-width:320px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#334155; transition:all .3s; }
+  .dot.answered { background:#22c55e; }
+  .dot.skipped  { background:#f59e0b; }
+  .dot.current  { background:#6366f1; transform:scale(1.3); }
+</style>
+{% endblock %}
+{% block content %}
+<div class="quiz-wrap">
+<div class="quiz-box" style="border:5px solid red;">
+  <div class="top-bar">
+    <div>
+      <div style="font-size:14px;font-weight:600;color:#f1f5f9;margin-bottom:2px">{{ assessment.title }}</div>
+      <span class="q-count" id="qCount">Question 1 of {{ total }}</span>
+    </div>
+    <span class="timer" id="timer">⏱ 1:00</span>
+  </div>
+
+  <div class="nav-dots" id="navDots"></div>
+
+  <div class="progress-bar" style="margin-top:12px">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progressLabel">0% complete</div>
+
+  <div class="cat-badge" id="catBadge">Loading</div>
+  <p class="q-text" id="qText">Loading question...</p>
+  <div class="options" id="optionsContainer"></div>
+  <div class="explanation" id="explanationBox"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline btn-sm" id="btnSkip" onclick="skipQuestion()">Skip</button>
+    <button class="btn btn-primary btn-sm" id="btnNext" onclick="nextQuestion()" disabled>Next →</button>
+  </div>
+</div>
+</div>
+
+<script>
+const QUESTIONS   = {{ questions_json | safe }};
+const ASSESSMENT_ID = {{ assessment.id }};
+const TIME_LIMIT  = {{ assessment.time_limit }};
+const CAT_COLORS  = {
+  'Python':'#713f12','Statistics':'#1d4ed8','Machine Learning':'#065f46',
+  'Data Visualization':'#4c1d95','EDA':'#7f1d1d','General':'#334155'
+};
+const DIFF_STYLE  = {
+  'Easy':  'background:#052e16;color:#86efac',
+  'Medium':'background:#431407;color:#fed7aa',
+  'Hard':  'background:#2d1c4e;color:#c4b5fd'
+};
+
+// Shuffle options for each question on load (prevent predictable positions)
+function shuffleOptions(q) {
+  const opts = ['A','B','C','D'];
+  const vals = [q.options.A, q.options.B, q.options.C, q.options.D];
+  const correctVal = q.options[q.correct_option] || null;
+  for (let i = vals.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [vals[i], vals[j]] = [vals[j], vals[i]];
+  }
+  const newOpts = {};
+  opts.forEach((k, i) => { newOpts[k] = vals[i]; });
+  // find where correct value landed
+  const newCorrect = opts.find(k => newOpts[k] === correctVal) || 'A';
+  return { ...q, options: newOpts, correct_option: newCorrect };
+}
+
+// const questions = QUESTIONS.map(shuffleOptions);
+const questions = QUESTIONS;
+let current   = 0;
+let selected  = null;
+let skipped   = false;
+let timeLeft  = TIME_LIMIT;
+let timerInterval;
+const answers = questions.map(() => ({ selected: null, skipped: false, time_taken: 0 }));
+
+// Build navigation dots
+const dotsContainer = document.getElementById('navDots');
+questions.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' current' : '');
+  d.id = 'dot-' + i;
+  dotsContainer.appendChild(d);
+});
+
+function updateDot(index, state) {
+  const d = document.getElementById('dot-' + index);
+  if (!d) return;
+  d.className = 'dot ' + state;
+}
+
+function loadQuestion() {
+  const q = questions[current];
+  selected = null; skipped = false; timeLeft = TIME_LIMIT;
+  const pct = Math.round((current / questions.length) * 100);
+  document.getElementById('qCount').textContent    = `Question ${current+1} of ${questions.length}`;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = pct + '% complete';
+
+  const badge = document.getElementById('catBadge');
+  badge.textContent  = q.category;
+  badge.style.background = CAT_COLORS[q.category] || '#334155';
+  badge.style.color  = '#e2e8f0';
+
+  document.getElementById('qText').innerHTML =
+    q.text + `<span class="diff-tag" style="${DIFF_STYLE[q.difficulty]||''}">${q.difficulty}</span>`;
+  document.getElementById('explanationBox').style.display = 'none';
+  document.getElementById('btnNext').disabled = true;
+  document.getElementById('btnSkip').disabled = false;
+  updateDot(current, 'current');
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  ['A','B','C','D'].forEach(letter => {
+    const btn = document.createElement('button');
+    btn.className   = 'opt-btn';
+    btn.dataset.letter = letter;
+    btn.innerHTML   = `<span class="opt-letter">${letter}</span>${q.options[letter]}`;
+    btn.onclick     = () => selectAnswer(letter, btn);
+    container.appendChild(btn);
+  });
+
+  clearInterval(timerInterval);
+  updateTimer();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) { clearInterval(timerInterval); autoSkip(); }
+  }, 1000);
+}
+
+function updateTimer() {
+  const m = Math.floor(timeLeft / 60), s = timeLeft % 60;
+  document.getElementById('timer').textContent = `⏱ ${m}:${s.toString().padStart(2,'0')}`;
+  document.getElementById('timer').style.color = timeLeft <= 10 ? '#f87171' : '#38bdf8';
+}
+
+function selectAnswer(letter, btn) {
+  if (selected || skipped) return;
+  selected = letter;
+  const q = questions[current];
+  console.log("Correct:", q.correct_option);
+  const allBtns = document.querySelectorAll('.opt-btn');
+ allBtns.forEach(b => {
+
+    // User selected correct answer
+    b.classList.remove('correct','wrong')
+
+    if (b.dataset.letter === letter && letter === q.correct_option) {
+        b.style.background = 'green';
+        b.style.borderColor = 'green';
+    }
+
+    // User selected wrong answer
+    else if (b.dataset.letter === letter && letter !== q.correct_option) {
+        b.classList.add('wrong');
+    }
+
+    // Show actual correct answer
+    else if (b.dataset.letter === q.correct_option) {
+        b.classList.add('correct');
+    }
+
+    b.disabled = true;
+});
+  answers[current].selected   = letter;
+  answers[current].time_taken = TIME_LIMIT - timeLeft;
+  clearInterval(timerInterval);
+  document.getElementById('btnNext').disabled = false;
+  document.getElementById('btnSkip').disabled = true;
+}
+
+function skipQuestion() {
+  if (skipped || selected) return;
+  skipped = true;
+  answers[current].skipped    = true;
+  answers[current].time_taken = TIME_LIMIT;
+  document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+  clearInterval(timerInterval);
+  updateDot(current, 'skipped');
+  document.getElementById('btnSkip').disabled = true;
+  document.getElementById('btnNext').disabled = false;
+}
+
+function autoSkip() { if (!selected && !skipped) skipQuestion(); }
+
+function nextQuestion() {
+  if (selected) updateDot(current, 'answered');
+  else if (!skipped) { skipQuestion(); return; }
+  current++;
+  if (current < questions.length) {
+    loadQuestion();
+  } else {
+    clearInterval(timerInterval);
+    submitAssessment();
+  }
+}
+
+async function submitAssessment() {
+  document.querySelector('.quiz-box').innerHTML =
+    '<div style="text-align:center;padding:60px 20px"><div style="font-size:40px;margin-bottom:16px">⏳</div><h2 style="font-size:20px;font-weight:600;margin-bottom:8px">Submitting your answers…</h2><p style="color:#64748b">Please wait.</p></div>';
+
+  const payload = {
+    assessment_id: ASSESSMENT_ID,
+    answers: questions.map((q, i) => ({
+      question_id: q.id,
+      selected:    answers[i].selected,
+      time_taken:  answers[i].time_taken
+    }))
+  };
+
+  const res  = await fetch('/submit', {
+    method: 'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  window.location.href = data.redirect || `/results/${ASSESSMENT_ID}`;
+}
+
+loadQuestion();
+</script>
+{% endblock %}

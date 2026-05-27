@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Your Results — {{ assessment.title }}{% endblock %}
+{% block head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .chart-card { background:#1e293b; border:1px solid #334155; border-radius:14px; padding:24px; }
+  .chart-card h3 { font-size:13px; font-weight:600; color:#94a3b8; margin-bottom:16px; letter-spacing:.3px; }
+  .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px; }
+  .cat-row { background:#1e293b; border:1px solid #334155; border-radius:12px; padding:16px 20px; margin-bottom:10px; }
+  .cat-row-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .cat-name  { font-size:14px; font-weight:600; }
+  .track { width:100%; height:5px; background:#334155; border-radius:99px; }
+  .track-fill { height:100%; border-radius:99px; }
+  .rank-chip { display:inline-flex; align-items:center; gap:10px; padding:10px 24px; border-radius:99px; font-size:15px; font-weight:700; border:2px solid; }
+  .review-table td { vertical-align:top; line-height:1.5; }
+  @media(max-width:600px){ .chart-grid{grid-template-columns:1fr;} .stat-grid{grid-template-columns:repeat(2,1fr);} }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container">
+
+  <div style="text-align:center;margin-bottom:28px">
+    <div style="font-size:42px;margin-bottom:8px">{{ rank_emoji }}</div>
+    <h1 class="page-title" style="text-align:center">You scored {{ score.percentage | round(1) }}%</h1>
+    <p style="color:#64748b;margin-bottom:16px">{{ assessment.title }}</p>
+    <div class="rank-chip" style="background:transparent;border-color:{{ rank_color }};color:{{ rank_color }}">
+      {{ rank_emoji }} {{ rank_label }}
+    </div>
+    {% if percentile %}
+    <p style="font-size:13px;color:#64748b;margin-top:10px">
+      You scored better than <strong style="color:#818cf8">{{ percentile }}%</strong> of candidates
+    </p>
+    {% endif %}
+  </div>
+
+  <!-- Score cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-val" style="color:#818cf8">{{ score.total_score }}/{{ score.max_score }}</div>
+      <div class="stat-lbl">Score</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#22c55e">{{ score.correct_count }}</div>
+      <div class="stat-lbl">Correct</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#ef4444">{{ score.wrong_count }}</div>
+      <div class="stat-lbl">Wrong</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:#f59e0b">{{ score.skipped_count }}</div>
+      <div class="stat-lbl">Skipped</div>
+    </div>
+  </div>
+
+  <!-- Charts row 1 -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <h3>Answer breakdown</h3>
+      <canvas id="donutChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Score by difficulty</h3>
+      <canvas id="diffChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- Category bar chart -->
+  <div class="chart-card" style="margin-bottom:16px">
+    <h3>Category-wise performance (%)</h3>
+    <canvas id="catChart" height="110"></canvas>
+  </div>
+
+  <!-- Radar -->
+  <div class="chart-card" style="margin-bottom:24px">
+    <h3>Skill profile radar</h3>
+    <canvas id="radarChart" height="200"></canvas>
+  </div>
+
+  <!-- Strengths / Weaknesses -->
+  {% if analytics.strengths or analytics.weaknesses %}
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">
+    <div class="card">
+      <div class="card-title" style="color:#22c55e">✓ Strengths</div>
+      {% if analytics.strengths %}
+        {% for s in analytics.strengths %}
+          <span class="badge badge-green" style="margin-right:6px;margin-bottom:6px">{{ s }}</span>
+        {% endfor %}
+      {% else %}
+        <p style="font-size:13px;color:#64748b">Keep practising!</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <div class="card-title" style="color:#ef4444">✗ Areas to improve</div>
+      {% if analytics.weaknesses %}
+        {% for w in analytics.weaknesses %}
+          <span class="badge badge-red" style="margin-right:6px;margin-bottom:6px">{{ w }}</span>
+        {% endfor %}
+      {% else %}
+        <p style="font-size:13px;color:#64748b">Great job overall!</p>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Category breakdown progress bars -->
+  <h2 style="font-size:14px;font-weight:600;color:#475569;letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">Category breakdown</h2>
+  {% for cat in analytics.category_performance %}
+  <div class="cat-row">
+    <div class="cat-row-top">
+      <span class="cat-name">{{ cat.category }}</span>
+      <span style="font-size:14px;font-weight:700;color:#818cf8">{{ cat.percentage }}%</span>
+    </div>
+    <div class="track"><div class="track-fill" style="width:{{ cat.percentage }}%;background:#6366f1"></div></div>
+    <div style="font-size:12px;color:#475569;margin-top:6px">{{ cat.correct }} / {{ cat.total }} correct</div>
+  </div>
+  {% endfor %}
+
+  <!-- Timing -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-title">Timing stats</div>
+    <div style="display:flex;gap:24px;flex-wrap:wrap">
+      <div><div style="font-size:22px;font-weight:700;color:#38bdf8">{{ analytics.timing.avg }}s</div><div style="font-size:12px;color:#64748b">Avg per question</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#a78bfa">{{ analytics.timing.median }}s</div><div style="font-size:12px;color:#64748b">Median</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#34d399">{{ analytics.timing.fastest }}s</div><div style="font-size:12px;color:#64748b">Fastest</div></div>
+      <div><div style="font-size:22px;font-weight:700;color:#fb923c">{{ analytics.timing.slowest }}s</div><div style="font-size:12px;color:#64748b">Slowest</div></div>
+    </div>
+  </div>
+
+  <!-- Answer review table -->
+  <h2 style="font-size:14px;font-weight:600;color:#475569;letter-spacing:.8px;text-transform:uppercase;margin:28px 0 14px">Full answer review</h2>
+  <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;overflow:hidden;overflow-x:auto">
+    <table class="review-table">
+      <thead><tr><th>#</th><th>Question</th><th>Category</th><th>Your answer</th><th>Result</th></tr></thead>
+      <tbody>
+        {% for r in responses %}
+        <tr>
+          <td style="color:#475569">{{ loop.index }}</td>
+          <td style="color:#e2e8f0;max-width:280px">{{ r.question_text }}</td>
+          <td><span class="badge badge-blue">{{ r.category }}</span></td>
+          <td style="color:#94a3b8">
+            {% if r.selected_option %}
+              {{ r.selected_option }}: {{ r['option_' + r.selected_option.lower()] }}
+            {% else %}
+              <span style="color:#475569">Skipped</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.is_correct == 1 %}
+              <span class="badge badge-green">✓ Correct</span>
+            {% elif r.is_correct == 0 %}
+              <span class="badge badge-red">✗ Wrong</span>
+            {% else %}
+              <span class="badge badge-gray">Skipped</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:12px;margin-top:28px;flex-wrap:wrap">
+    <a href="/candidate" class="btn btn-outline">← Back to Assessments</a>
+  </div>
+
+</div>
+
+<script>
+Chart.defaults.color = '#64748b';
+
+const catData   = {{ analytics.category_performance | tojson }};
+const diffData  = {{ analytics.difficulty_performance | tojson }};
+const catColors = ['#818cf8','#34d399','#fbbf24','#a78bfa','#f87171'];
+
+// Donut
+new Chart(document.getElementById('donutChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Correct','Wrong','Skipped'],
+    datasets:[{
+      data:[{{ score.correct_count }},{{ score.wrong_count }},{{ score.skipped_count }}],
+      backgroundColor:['#22c55e','#ef4444','#f59e0b'],
+      borderColor:'#1e293b', borderWidth:3
+    }]
+  },
+  options:{ responsive:true, cutout:'68%', plugins:{ legend:{ position:'bottom', labels:{ color:'#94a3b8', padding:14 } } } }
+});
+
+// Difficulty bar
+new Chart(document.getElementById('diffChart'), {
+  type:'bar',
+  data:{
+    labels:diffData.map(d=>d.difficulty),
+    datasets:[{
+      label:'% Correct',
+      data:diffData.map(d=>d.percentage),
+      backgroundColor:['#34d399aa','#fbbf24aa','#f87171aa'],
+      borderColor:['#34d399','#fbbf24','#f87171'],
+      borderWidth:1.5, borderRadius:6
+    }]
+  },
+  options:{
+    responsive:true,
+    scales:{ y:{ beginAtZero:true, max:100, grid:{color:'#1e293b'}, ticks:{callback:v=>v+'%',color:'#475569'} }, x:{grid:{display:false},ticks:{color:'#94a3b8'}} },
+    plugins:{ legend:{display:false} }
+  }
+});
+
+// Category bar
+new Chart(document.getElementById('catChart'), {
+  type:'bar',
+  data:{
+    labels:catData.map(c=>c.category),
+    datasets:[{
+      label:'% Correct',
+      data:catData.map(c=>c.percentage),
+      backgroundColor:catColors.map(c=>c+'aa'),
+      borderColor:catColors,
+      borderWidth:1.5, borderRadius:8
+    }]
+  },
+  options:{
+    responsive:true,
+    scales:{ y:{beginAtZero:true,max:100,grid:{color:'#1e293b'},ticks:{callback:v=>v+'%',color:'#475569'}}, x:{grid:{display:false},ticks:{color:'#94a3b8',font:{size:11}}} },
+    plugins:{legend:{display:false}}
+  }
+});
+
+// Radar
+new Chart(document.getElementById('radarChart'), {
+  type:'radar',
+  data:{
+    labels:catData.map(c=>c.category),
+    datasets:[{
+      label:'Your score (%)',
+      data:catData.map(c=>c.percentage),
+      backgroundColor:'#6366f133', borderColor:'#818cf8', borderWidth:2,
+      pointBackgroundColor:'#818cf8', pointRadius:4
+    }]
+  },
+  options:{
+    responsive:true,
+    scales:{ r:{ beginAtZero:true, max:100, grid:{color:'#334155'}, angleLines:{color:'#334155'}, ticks:{display:false}, pointLabels:{color:'#94a3b8',font:{size:11}} } },
+    plugins:{legend:{display:false}}
+  }
+});
+</script>
+{% endblock %}

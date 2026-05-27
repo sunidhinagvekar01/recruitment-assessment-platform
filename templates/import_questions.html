@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Import Questions{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <h1 class="page-title">
+        Import Questions
+    </h1>
+
+    <p>
+        Assessment: {{ assessment.title }}
+    </p>
+
+    <form method="POST">
+<div class="card">
+
+        {% for q in questions %}
+        <div style="padding:12px;border-bottom:1px solid #ddd">
+
+            <input
+    type="checkbox"
+    name="question_ids"
+    value="{{ q.id }}"
+>
+
+            <strong>{{ q.question_text }}</strong>
+
+            <br>
+
+            <small>
+                {{ q.category }} • {{ q.difficulty }}
+            </small>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+    </div>
+
+<br>
+
+<button type="submit" class="btn btn-primary">
+    Import Selected Questions
+</button>
+
+</form>
+
+</div>
+{% endblock %}

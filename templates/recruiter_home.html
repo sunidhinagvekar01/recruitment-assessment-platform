@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Recruiter Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+    <div>
+      <h1 class="page-title">Recruiter Dashboard</h1>
+      <p class="page-sub" style="margin-bottom:0">Welcome, {{ name }}. Manage assessments and view candidate analytics.</p>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+  <a href="/recruiter/create" class="btn btn-primary">+ Create Assessment</a>
+  <a href="/recruiter/question-bank" class="btn btn-outline"> Question Bank</a>
+</div>
+  </div>
+
+  {% if not assessments %}
+  <div class="card" style="text-align:center;padding:48px">
+    <div style="font-size:36px;margin-bottom:12px">📋</div>
+    <p style="color:#64748b;margin-bottom:20px">No assessments yet. Create your first one.</p>
+    <a href="/recruiter/create" class="btn btn-primary">Create Assessment</a>
+  </div>
+  {% endif %}
+
+  {% for a in assessments %}
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:6px;color:#f1f5f9">{{ a.title }}</div>
+        <div style="font-size:13px;color:#64748b;margin-bottom:10px">{{ a.description or '—' }}</div>
+        <span class="badge badge-blue">⏱ {{ a.time_limit }}s per question</span>
+        <span class="badge badge-purple" style="margin-left:6px">Created {{ a.created_at[:10] }}</span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <a href="/recruiter/assessment/{{ a.id }}/add-questions" class="btn btn-outline btn-sm">Add Questions</a>
+        <a href="/recruiter/assessment/{{ a.id }}/candidates"    class="btn btn-primary btn-sm">View Candidates →</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My Assessments{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="page-title">Welcome, {{ name }} 👋</h1>
+  <p class="page-sub">Select an assessment below to begin.</p>
+
+  {% if not assessments %}
+    <div class="card" style="text-align:center;padding:48px">
+      <div style="font-size:36px;margin-bottom:12px">📋</div>
+      <p style="color:#64748b">No assessments available yet. Check back soon.</p>
+    </div>
+  {% endif %}
+
+  {% for a in assessments %}
+  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+    <div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:6px;color:#f1f5f9">{{ a.title }}</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:10px">{{ a.description or 'No description provided.' }}</div>
+      <span class="badge badge-blue">⏱ {{ a.time_limit }}s per question</span>
+      {% if a.attempted %}
+        <span class="badge badge-green" style="margin-left:8px">✓ Completed</span>
+      {% endif %}
+    </div>
+    <div>
+      {% if a.attempted %}
+        <a href="/results/{{ a.id }}" class="btn btn-outline btn-sm">View Results</a>
+      {% else %}
+        <a href="/quiz/{{ a.id }}" class="btn btn-primary btn-sm">Start Test →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
