@@ -33,6 +33,13 @@
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <a href="/recruiter/assessment/{{ a.id }}/add-questions" class="btn btn-outline btn-sm">Add Questions</a>
         <a href="/recruiter/assessment/{{ a.id }}/candidates"    class="btn btn-primary btn-sm">View Candidates →</a>
+        <a href="/recruiter/assessment/{{ a.id }}/delete"
+   class="btn btn-danger btn-sm"
+   onclick="return confirm('Delete this assessment?')">
+
+   Delete
+
+</a>
       </div>
     </div>
   </div>

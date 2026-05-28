@@ -240,6 +240,60 @@ def update_question_in_bank(
         question_id
     ))
 
+def bulk_add_questions_to_bank(df):
+
+    conn = get_conn()
+
+    for _, row in df.iterrows():
+
+        conn.execute("""
+            INSERT INTO question_bank (
+                question_text,
+                option_a,
+                option_b,
+                option_c,
+                option_d,
+                correct_option,
+                category,
+                difficulty
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            row['question_text'],
+            row['option_a'],
+            row['option_b'],
+            row['option_c'],
+            row['option_d'],
+            row['correct_option'],
+            row['category'],
+            row['difficulty']
+        ))
+
+def delete_assessment(assessment_id):
+
+    conn = get_conn()
+
+    conn.execute(
+        "DELETE FROM responses WHERE assessment_id=?",
+        (assessment_id,)
+    )
+
+    conn.execute(
+        "DELETE FROM scores WHERE assessment_id=?",
+        (assessment_id,)
+    )
+
+    conn.execute(
+        "DELETE FROM questions WHERE assessment_id=?",
+        (assessment_id,)
+    )
+
+    conn.execute(
+        "DELETE FROM assessments WHERE id=?",
+        (assessment_id,)
+    )
 
     conn.commit()
     conn.close()
+   

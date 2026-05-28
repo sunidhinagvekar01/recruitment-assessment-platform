@@ -7,11 +7,19 @@
 
     <h1>📚 Question Bank</h1>
 
-    <div style="margin-bottom:20px">
-        <a href="/recruiter/question-bank/add" class="btn btn-primary">
-            + Add Question
-        </a>
-    </div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+
+    <a href="/recruiter/question-bank/add"
+       class="btn btn-primary">
+        + Add Question
+    </a>
+
+    <a href="/recruiter/question-bank/upload"
+       class="btn btn-outline">
+        📥 Upload Excel
+    </a>
+
+</div>
 
     <p>Total Questions: {{ questions|length }}</p>
 

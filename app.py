@@ -5,7 +5,7 @@ from database import (create_user, login_user, get_user, get_all_assessments,
 from scoring import calculate_and_save_score, get_rank_label
 from analytics import get_candidate_analytics, get_percentile_rank
 import json
-
+import pandas as pd
 app = Flask(__name__)
 app.secret_key = 'recruitment_secret_2025'
 
@@ -196,6 +196,20 @@ def results(assessment_id):
                            responses=responses,
                            name=session['name'])
 
+
+
+@app.route('/recruiter/assessment/<int:assessment_id>/delete')
+def delete_assessment_route(assessment_id):
+
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    from database import delete_assessment
+
+    delete_assessment(assessment_id)
+
+    return redirect('/recruiter')
 
 # ── RECRUITER ROUTES ──────────────────────────────────────────────────────
 
@@ -459,6 +473,38 @@ def recruiter_candidate_detail(candidate_id, assessment_id):
                            rank_emoji=rank_emoji,
                            rank_color=rank_color)
 
+@app.route('/recruiter/question-bank/upload',
+           methods=['GET', 'POST'])
+def upload_question_bank():
+
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    success = None
+
+    if request.method == 'POST':
+
+        file = request.files['file']
+
+        if file.filename.endswith('.csv'):
+
+            df = pd.read_csv(file)
+
+        else:
+
+            df = pd.read_excel(file)
+
+        from database import bulk_add_questions_to_bank
+
+        bulk_add_questions_to_bank(df)
+
+        success = f"{len(df)} questions imported successfully!"
+
+    return render_template(
+        'upload_question_bank.html',
+        success=success
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)
