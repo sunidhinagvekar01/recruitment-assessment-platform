@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Questions{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    <h1 class="page-title">
+        Upload Questions to {{ assessment.title }}
+    </h1>
+
+    <p>
+        Upload a CSV or Excel file and automatically add questions to this assessment.
+    </p>
+    {% if success %}
+    <div class="alert-success">
+        {{ success }}
+    </div>
+    {% endif %}
+    
+    <div class="card">
+
+        <form method="POST"
+              enctype="multipart/form-data">
+
+            <div style="margin-bottom:20px">
+
+                <label>Select CSV / Excel File</label>
+
+                <br><br>
+
+                <input
+                    type="file"
+                    name="file"
+                    accept=".csv,.xlsx"
+                    required
+                >
+
+            </div>
+
+            <button type="submit"
+                    class="btn btn-primary">
+
+                Upload Questions
+
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+{% endblock %}

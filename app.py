@@ -473,6 +473,52 @@ def recruiter_candidate_detail(candidate_id, assessment_id):
                            rank_emoji=rank_emoji,
                            rank_color=rank_color)
 
+@app.route('/recruiter/assessment/<int:assessment_id>/upload',
+           methods=['GET', 'POST'])
+def upload_questions_to_assessment(assessment_id):
+
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    assessment = get_assessment(assessment_id)
+
+    success = None
+
+    if request.method == 'POST':
+
+        file = request.files['file']
+
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(file)
+
+        else:
+            df = pd.read_excel(file)
+
+        from database import add_question
+
+        for _, row in df.iterrows():
+
+            add_question(
+                assessment_id,
+                row['question_text'],
+                row['option_a'],
+                row['option_b'],
+                row['option_c'],
+                row['option_d'],
+                row['correct_option'],
+                row['category'],
+                row['difficulty']
+            )
+
+        success = f"{len(df)} questions imported successfully!"
+
+    return render_template(
+        'upload_assessment_questions.html',
+        assessment=assessment,
+        success=success
+    )                       
+
 @app.route('/recruiter/question-bank/upload',
            methods=['GET', 'POST'])
 def upload_question_bank():
