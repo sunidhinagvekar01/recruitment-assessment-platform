@@ -29,22 +29,29 @@
         <div class="stat-label">Questions</div>
     </div>
 
+    <div class="stat-card">
+    <div class="stat-number">0%</div>
+    <div class="stat-label">Completion Rate</div>
+    </div>
+
     </div>
   {% if not assessments %}
-  <div class="card" style="text-align:center;padding:48px">
-    <div style="font-size:36px;margin-bottom:12px">📋</div>
-    <p style="color:#64748b;margin-bottom:20px">No assessments yet. Create your first one.</p>
-    <a href="/recruiter/create" class="btn btn-primary">Create Assessment</a>
+  <div class="card empty-state">
+    <h3>No Assessments Available</h3>
+    <p>Create your first assessment to start evaluating candidates.</p>
+    <a href="/recruiter/create" class="btn btn-primary">
+        Create Assessment
+    </a>
   </div>
   {% endif %}
 
   {% for a in assessments %}
-  <div class="card">
+  <div class="card assessment-card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
       <div>
-        <div style="font-size:17px;font-weight:600;margin-bottom:6px;color:#f1f5f9">{{ a.title }}</div>
+        <div class="assessment-title">{{ a.title }}</div>
         <div style="font-size:13px;color:#64748b;margin-bottom:10px">{{ a.description or '—' }}</div>
-        <span class="badge badge-blue">⏱ {{ a.time_limit }}s per question</span>
+        <span class="badge badge-blue"> {{ a.time_limit }}s per question</span>
         <span class="badge badge-purple" style="margin-left:6px">Created {{ a.created_at[:10] }}</span>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
