@@ -1,7 +1,32 @@
-{% extends "base.html" %}
+{% extends "recruiter_base.html" %}
 {% block title %}Create Assessment{% endblock %}
+{% block head %}
+<style>
+.form-group{margin-bottom:18px;}
+
+.form-group label{
+    display:block;
+    margin-bottom:6px;
+    color:#2F3E34;
+    font-size:14px;
+    font-weight:500;
+}
+
+.form-group input,
+.form-group textarea{
+    width:100%;
+    padding:12px 14px;
+    border:1px solid #CBD5C0;
+    border-radius:12px;
+    background:white;
+    color:#2F3E34;
+    font-size:14px;
+    font-family:inherit;
+}
+</style>
+{% endblock %}
 {% block content %}
-<div class="container" style="max-width:600px">
+<div class="container"></div>
   <h1 class="page-title">Create Assessment</h1>
   <p class="page-sub">Fill in the details below to set up a new assessment.</p>
   <div class="card">

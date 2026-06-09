@@ -3,24 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <title>{% block title %}RecruitAssess{% endblock %}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Inter',sans-serif; background:#F6F8F2; color:#e2e8f0; min-height:100vh; }
+    body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
 
     nav {
       display:flex; justify-content:space-between; align-items:center;
-      padding:16px 40px;
-      background:#F4F6F1;
-      border-bottom:1px solid #CBD5C0;
+      padding:16px 40px; background:#1e293b; border-bottom:1px solid #334155;
     }
     .logo { font-size:18px; font-weight:700; color:#818cf8; letter-spacing:-0.5px; }
     .logo span { color:#e2e8f0; }
     .nav-right { display:flex; align-items:center; gap:20px; }
-    .nav-right a { font-size:14px; color:#2F3E34; text-decoration:none; transition:color .2s; }
+    .nav-right a { font-size:14px; color:#64748b; text-decoration:none; transition:color .2s; }
     .nav-right a:hover { color:#e2e8f0; }
     .nav-badge {
       font-size:11px; font-weight:700; padding:3px 10px; border-radius:99px;
@@ -30,18 +25,14 @@
     .badge-recruiter  { background:#312e81; color:#c4b5fd; }
 
     .container { max-width:900px; margin:0 auto; padding:40px 20px; }
-    .page-title { font-size:32px; font-weight:700; color:#2F3A2F; margin-bottom:8px; }
-    .page-sub   { font-size:15px; color:#6B7280; margin-bottom:32px; }
+    .page-title { font-size:26px; font-weight:700; margin-bottom:8px; }
+    .page-sub   { font-size:14px; color:#64748b; margin-bottom:32px; }
 
     .card {
-      background:#ffffff;
-  border:1px solid #CBD5C0;
-  border-radius:18px;
-  padding:28px;
-  margin-bottom:24px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.04);
+      background:#1e293b; border:1px solid #334155; border-radius:14px;
+      padding:28px; margin-bottom:20px;
     }
-    .card-title { font-size:16px; font-weight:600; margin-bottom:16px; color:#2F3E34; }
+    .card-title { font-size:16px; font-weight:600; margin-bottom:16px; color:#f1f5f9; }
 
     .btn {
       display:inline-block; padding:11px 28px; border-radius:8px; font-size:14px;
@@ -49,16 +40,22 @@
     }
     .btn-primary { background:#6366f1; color:#fff; }
     .btn-primary:hover { background:#4f46e5; transform:translateY(-1px); }
-    .btn-outline { background:#ffffff; color:#2F3E34; border:1px solid #CBD5C0; }
-    .btn-outline:hover { border-color:#758467; color:#2F3E34; }
+    .btn-outline { background:transparent; color:#94a3b8; border:1px solid #475569; }
+    .btn-outline:hover { border-color:#94a3b8; color:#e2e8f0; }
     .btn-danger  { background:#dc2626; color:#fff; }
     .btn-sm      { padding:7px 16px; font-size:13px; }
 
     .form-group { margin-bottom:18px; }
-    .form-group label {display:block;font-size:13px;color:#475569;margin-bottom:6px;font-weight:500;}
-    .form-group input, .form-group select, .form-group textarea { width:100%; background:#ffffff; border:1px solid #CBD5C0; border-radius:10px; padding:11px 14px; font-size:14px; color:#2F3E34; outline:none; transition:border .2s; font-family:inherit; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:#758467; }
-    .form-group select option { background:#ffffff; color:#2F3E34; }
+    .form-group label { display:block; font-size:13px; color:#94a3b8; margin-bottom:6px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width:100%; background:#0f172a; border:1px solid #334155; border-radius:8px;
+      padding:11px 14px; font-size:14px; color:#e2e8f0; outline:none; transition:border .2s;
+      font-family:inherit;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color:#6366f1;
+    }
+    .form-group select option { background:#1e293b; }
 
     .alert-error {
       background:#2d0a0a; border:1px solid #dc2626; border-radius:8px;
@@ -73,7 +70,7 @@
     th { text-align:left; padding:10px 14px; font-size:11px; font-weight:700;
          letter-spacing:.8px; text-transform:uppercase; color:#475569;
          border-bottom:1px solid #334155; }
-    td { padding:13px 14px; border-bottom:1px solid #E5E7EB; color:#2F3E34; }
+    td { padding:13px 14px; border-bottom:1px solid #1e293b; color:#94a3b8; }
     tr:hover td { background:#ffffff08; }
 
     .badge {
@@ -109,7 +106,7 @@
     <span class="nav-badge {% if session.role=='recruiter' %}badge-recruiter{% else %}badge-candidate{% endif %}">
       {{ session.role }}
     </span>
-    <span style="font-size:14px;color:#2F3E34">{{ session.name }}</span>
+    <span style="font-size:14px;color:#94a3b8">{{ session.name }}</span>
     <a href="/logout">Log out</a>
   </div>
 </nav>
