@@ -4,7 +4,7 @@ import hashlib
 DB = 'assessment.db'
 
 def get_conn():
-    conn = sqlite3.connect(DB)
+    conn = sqlite3.connect(DB, timeout=30)
     conn.row_factory = sqlite3.Row   # lets you access columns by name like dict
     return conn
 
@@ -14,17 +14,21 @@ def hash_password(password):
 # ── USER FUNCTIONS ────────────────────────────────────────────────────────
 
 def create_user(name, email, password, role='candidate'):
+    conn = get_conn()
+
     try:
-        conn = get_conn()
         conn.execute(
             "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
             (name, email, hash_password(password), role)
         )
         conn.commit()
-        conn.close()
         return True, "Account created!"
+
     except sqlite3.IntegrityError:
         return False, "Email already registered."
+
+    finally:
+        conn.close()
 
 def login_user(email, password):
     conn = get_conn()
