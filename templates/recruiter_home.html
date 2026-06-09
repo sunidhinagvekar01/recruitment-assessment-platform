@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "recruiter_base.html" %}
 {% block title %}Recruiter Dashboard{% endblock %}
 {% block content %}
 <div class="container">
@@ -12,7 +12,24 @@
   <a href="/recruiter/question-bank" class="btn btn-outline"> Question Bank</a>
 </div>
   </div>
+<div class="stats-grid">
 
+    <div class="stat-card">
+        <div class="stat-number">{{ assessments|length }}</div>
+        <div class="stat-label">Assessments</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">--</div>
+        <div class="stat-label">Candidates</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-number">--</div>
+        <div class="stat-label">Questions</div>
+    </div>
+
+    </div>
   {% if not assessments %}
   <div class="card" style="text-align:center;padding:48px">
     <div style="font-size:36px;margin-bottom:12px">📋</div>

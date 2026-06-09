@@ -3,10 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <title>{% block title %}RecruitAssess{% endblock %}</title>
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Segoe UI',sans-serif; background:#0f172a; color:#e2e8f0; min-height:100vh; }
+    body { font-family:'Inter',sans-serif; background:#F6F8F2; color:#e2e8f0; min-height:100vh; }
 
     nav {
       display:flex; justify-content:space-between; align-items:center;
@@ -25,12 +28,16 @@
     .badge-recruiter  { background:#312e81; color:#c4b5fd; }
 
     .container { max-width:900px; margin:0 auto; padding:40px 20px; }
-    .page-title { font-size:26px; font-weight:700; margin-bottom:8px; }
-    .page-sub   { font-size:14px; color:#64748b; margin-bottom:32px; }
+    .page-title { font-size:32px; font-weight:700; color:#2F3A2F; margin-bottom:8px; }
+    .page-sub   { font-size:15px; color:#6B7280; margin-bottom:32px; }
 
     .card {
-      background:#1e293b; border:1px solid #334155; border-radius:14px;
-      padding:28px; margin-bottom:20px;
+      background:#ffffff;
+  border:1px solid #CBD5C0;
+  border-radius:18px;
+  padding:28px;
+  margin-bottom:24px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.04);
     }
     .card-title { font-size:16px; font-weight:600; margin-bottom:16px; color:#f1f5f9; }
 
