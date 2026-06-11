@@ -2,3 +2,4 @@ __pycache__/
 *.pyc
 assessment.db
 .env
+venv/
