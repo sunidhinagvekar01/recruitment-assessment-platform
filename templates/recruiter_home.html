@@ -1,72 +1,148 @@
 {% extends "recruiter_base.html" %}
 {% block title %}Recruiter Dashboard{% endblock %}
+
 {% block content %}
+
 <div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px">
-    <div>
-      <h1 class="page-title">Recruiter Dashboard</h1>
-      <p class="page-sub" style="margin-bottom:0">Welcome, {{ name }}. Manage assessments and view candidate analytics.</p>
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-  <a href="/recruiter/create" class="btn btn-primary">+ Create Assessment</a>
-  <a href="/recruiter/question-bank" class="btn btn-outline"> Question Bank</a>
+
+```
+<div class="form-header">
+    <h1>Recruiter Dashboard</h1>
+    <p>
+        Manage assessments, candidates and recruitment performance
+    </p>
 </div>
-  </div>
+
+<div style="
+    display:flex;
+    justify-content:center;
+    gap:12px;
+    margin-top:20px;
+    margin-bottom:35px;
+    flex-wrap:wrap;
+">
+    <a href="/recruiter/create" class="btn btn-primary">
+        + Create Assessment
+    </a>
+
+    <a href="/recruiter/question-bank" class="btn btn-outline">
+        Question Bank
+    </a>
+</div>
+
 <div class="stats-grid">
 
     <div class="stat-card">
         <div class="stat-number">{{ assessments|length }}</div>
-        <div class="stat-label">Assessments</div>
+        <div class="stat-label">Active Assessments</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Candidates</div>
+        <div class="stat-number">{{ total_candidates }}</div>
+        <div class="stat-label">Total Candidates</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-number">--</div>
-        <div class="stat-label">Questions</div>
+        <div class="stat-number">{{ total_questions }}</div>
+        <div class="stat-label">Question Bank Size</div>
     </div>
 
     <div class="stat-card">
-    <div class="stat-number">0%</div>
-    <div class="stat-label">Completion Rate</div>
+        <div class="stat-number">{{ completion_rate }}%</div>
+        <div class="stat-label">Completion Rate</div>
     </div>
 
-    </div>
-  {% if not assessments %}
-  <div class="card empty-state">
+</div>
+
+<h2 style="
+    font-size:24px;
+    font-weight:700;
+    color:#2F3E34;
+    margin-top:40px;
+    margin-bottom:20px;
+">
+    Your Assessments
+</h2>
+
+{% if not assessments %}
+<div class="card empty-state">
+
     <h3>No Assessments Available</h3>
-    <p>Create your first assessment to start evaluating candidates.</p>
+
+    <p>
+        Create your first assessment to begin evaluating candidates.
+    </p>
+
     <a href="/recruiter/create" class="btn btn-primary">
         Create Assessment
     </a>
-  </div>
-  {% endif %}
 
-  {% for a in assessments %}
-  <div class="card assessment-card">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
-      <div>
-        <div class="assessment-title">{{ a.title }}</div>
-        <div style="font-size:13px;color:#64748b;margin-bottom:10px">{{ a.description or '—' }}</div>
-        <span class="badge badge-blue"> {{ a.time_limit }}s per question</span>
-        <span class="badge badge-purple" style="margin-left:6px">Created {{ a.created_at[:10] }}</span>
-      </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <a href="/recruiter/assessment/{{ a.id }}/add-questions" class="btn btn-outline btn-sm">Add Questions</a>
-        <a href="/recruiter/assessment/{{ a.id }}/candidates"    class="btn btn-primary btn-sm">View Candidates →</a>
-        <a href="/recruiter/assessment/{{ a.id }}/delete"
-   class="btn btn-danger btn-sm"
-   onclick="return confirm('Delete this assessment?')">
+</div>
+{% endif %}
 
-   Delete
+{% for a in assessments %}
 
-</a>
-      </div>
+<div class="card" style="
+    padding:25px;
+    margin-bottom:18px;
+">
+
+    <h3 style="
+        margin-bottom:8px;
+        color:#2F3E34;
+    ">
+        {{ a.title }}
+    </h3>
+
+    <p style="
+        color:#64748B;
+        margin-bottom:15px;
+    ">
+        {{ a.description or 'No description available.' }}
+    </p>
+
+    <div style="
+        display:flex;
+        gap:20px;
+        flex-wrap:wrap;
+        color:#64748B;
+        font-size:14px;
+        margin-bottom:20px;
+    ">
+        <span>{{ a.time_limit }}s per question</span>
+        <span>Created {{ a.created_at[:10] }}</span>
     </div>
-  </div>
-  {% endfor %}
+
+    <div style="
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+    ">
+
+        <a href="/recruiter/assessment/{{ a.id }}/add-questions"
+           class="btn btn-outline btn-sm">
+            Add Questions
+        </a>
+
+        <a href="/recruiter/assessment/{{ a.id }}/candidates"
+           class="btn btn-primary btn-sm">
+            View Candidates →
+        </a>
+
+        <a href="/recruiter/assessment/{{ a.id }}/delete"
+           class="btn btn-danger btn-sm"
+           onclick="return confirm('Delete this assessment?')">
+            Delete
+        </a>
+
+    </div>
+
+</div>
+
+{% endfor %}
+```
+
 </div>
 {% endblock %}
+
+

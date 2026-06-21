@@ -217,11 +217,21 @@ def delete_assessment_route(assessment_id):
 def recruiter_home():
     guard = login_required('recruiter')
     if guard: return guard
-    from database import get_all_assessments
+    from database import (
+    get_all_assessments,
+    get_total_candidates,
+    get_total_questions,
+    get_completion_rate
+)
     assessments = get_all_assessments()
-    return render_template('recruiter_home.html',
-                           assessments=assessments,
-                           name=session['name'])
+    return render_template(
+    'recruiter_home.html',
+    assessments=assessments,
+    name=session['name'],
+    total_candidates=get_total_candidates(),
+    total_questions=get_total_questions(),
+    completion_rate=get_completion_rate()
+)
 
 @app.route('/recruiter/question-bank')
 def question_bank():
@@ -517,7 +527,18 @@ def upload_questions_to_assessment(assessment_id):
         'upload_assessment_questions.html',
         assessment=assessment,
         success=success
-    )                       
+    )        
+
+@app.route('/recruiter/analytics')
+def recruiter_analytics():
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    return render_template(
+        'analytics.html',
+        name=session['name']
+    )               
 
 @app.route('/recruiter/question-bank/upload',
            methods=['GET', 'POST'])
@@ -557,3 +578,6 @@ import os
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
+
+

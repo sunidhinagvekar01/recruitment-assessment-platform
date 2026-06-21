@@ -2,29 +2,56 @@
 
 {% block title %}Question Bank{% endblock %}
 
+{% block head %}
+<style>
+
+.form-header{
+    background:#7F8E6F;
+    border-radius:16px;
+    padding:10px 10px;
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.form-header h1{
+    color:white;
+    margin:0;
+    font-size:42px;
+}
+
+.form-header p{
+    color:white;
+    margin:8px 0 0 0;
+    font-size:16px;
+}
+
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
 
-    <h1 class="page-title">Question Bank</h1>
+    <div style="text-align:center;margin-bottom:30px;">
 
-    <div style="display:flex;gap:10px;margin-bottom:20px">
+        <div class="form-header">
+             <h1>Question Bank</h1>
+             <p>Manage, search and organize assessment questions</p>
+        </div>
 
-    <a href="/recruiter/question-bank/add"
-       class="btn btn-primary">
-        + Add Question
-    </a>
+         <div style="display:flex;justify-content:center;gap:10px;margin-top:15px;">
+             <a href="/recruiter/question-bank/add" class="btn btn-primary">
+                Add Question Manually
+             </a>
 
-    <a href="/recruiter/question-bank/upload"
-       class="btn btn-outline">
-        📥 Upload Excel
-    </a>
+             <a href="/recruiter/question-bank/upload" class="btn btn-outline">
+                 Import Questions
+             </a>
+        </div>
 
-</div>
+    </div>
 
-    <p style="color:#475569;font-weight:500;">Total Questions: {{ questions|length }}</p>
-
-    <div class="card" style="margin-bottom:20px;padding:16px">
-        <form method="GET" style="display:flex;gap:12px;flex-wrap:wrap">
+    <div class="card" style="margin-bottom:25px;padding:25px">
+        <form method="GET" style="display:flex;gap:20px;flex-wrap:wrap">
 
             <input
                 type="text"

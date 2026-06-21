@@ -2,6 +2,28 @@
 {% block title %}Add Questions — {{ assessment.title }}{% endblock %}
 {% block head %}
 <style>
+
+.form-header{
+    background:#7D8D6B;
+    border-radius:18px;
+    padding:25px 30px;
+    text-align:center;
+    margin-bottom:30px;
+}
+
+.form-header h1{
+    color:white;
+    font-size:40px;
+    font-weight:700;
+    margin-bottom:10px;
+}
+
+.form-header p{
+    color:white;
+    font-size:16px;
+    margin:0;
+}
+
 .form-group{margin-bottom:18px;}
 
 .form-group label{
@@ -35,28 +57,31 @@
 {% endblock %}
 {% block content %}
 <div class="container">
-  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+  <div>
     <div>
-      <h1 class="page-title">Add Questions</h1>
-      <p class="page-sub" style="margin-bottom:0">{{ assessment.title }} — {{ questions|length }} question(s) added so far</p>
+      <div class="form-header">
+        <h1>{{ assessment.title }}</h1>
+        <p>Add and manage questions for this assessment</p>
+      </div>
+
+      <div style="display:flex;gap:12px;margin:25px 0 30px 0;">
+        <a href="/recruiter/{{ assessment.id }}/import-questions"
+        class="btn btn-primary btn-sm">
+         Import From Question Bank
+        </a>
+
+        <a href="/recruiter" class="btn btn-outline btn-sm">
+         ← Back to Dashboard
+        </a>
+
+          <a href="/recruiter/assessment/{{ assessment.id }}/upload"
+          class="btn btn-outline btn-sm">
+           Upload CSV
+          </a>
+      </div>
+
     </div>
-    <div style="display:flex;gap:10px">
-  <a href="/recruiter/{{ assessment.id }}/import-questions"
-     class="btn btn-primary btn-sm">
-      Import From Question Bank
-  </a>
-
-  <a href="/recruiter" class="btn btn-outline btn-sm">
-     ← Back to Dashboard
-  </a>
-  <a href="/recruiter/assessment/{{ assessment.id }}/upload"
-   class="btn btn-outline btn-sm">
-
-   📥 Upload CSV
-
-</a>
-</div>
-  </div>
+    
 
   {% if success %}<div class="alert-success">{{ success }}</div>{% endif %}
 
@@ -106,7 +131,7 @@
   <div class="card" style="padding:18px 22px;margin-bottom:10px">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
       <div>
-        <div style="font-size:14px;color:#f1f5f9;margin-bottom:8px">{{ loop.index }}. {{ q.question_text }}</div>
+        <div style="font-size:14px;color:#2F3E34;margin-bottom:8px">{{ loop.index }}. {{ q.question_text }}</div>
         <div style="font-size:12px;color:#64748b">
           A: {{ q.option_a }} &nbsp;|&nbsp; B: {{ q.option_b }} &nbsp;|&nbsp;
           C: {{ q.option_c }} &nbsp;|&nbsp; D: {{ q.option_d }}

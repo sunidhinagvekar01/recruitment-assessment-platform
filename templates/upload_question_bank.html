@@ -5,32 +5,26 @@
 {% block content %}
 <div class="container">
 
-    <h1 class="page-title">
-        📥 Upload Questions
-    </h1>
-
-    <p>
-        Upload Excel or CSV files to bulk import questions.
-    </p>
-{% if success %}
-
-<div class="alert-success">
-    {{ success }}
-</div>
-
-{% endif %}
     <div class="card">
 
-        <form method="POST"
-              enctype="multipart/form-data">
+    <div class="form-header">
+        <h1>Upload Questions</h1>
+        <p>Bulk import questions using Excel or CSV files</p>
+    </div>
 
-            <div style="margin-bottom:20px">
+    {% if success %}
+    <div class="alert-success">
+        {{ success }}
+    </div>
+    {% endif %}
 
-                <label>
-                    Select Excel / CSV File
-                </label>
+    <div style="margin-top:30px;">
+    <form method="POST" enctype="multipart/form-data">
+        <!-- Left Side -->
+        <div>
 
-                <br><br>
+            <div class="form-group">
+                <label>Question Dataset File</label>
 
                 <input
                     type="file"
@@ -38,19 +32,56 @@
                     accept=".xlsx,.csv"
                     required
                 >
-
             </div>
 
-            <button type="submit"
-                    class="btn btn-primary">
+            <div style="margin-top:20px;">
+                <button type="submit" class="btn btn-primary">
+                    Upload Questions
+                </button>
+            </div>
 
-                Upload Questions
+        </div>
 
-            </button>
+        <!-- Right Side -->
+        <div style="margin-top:40px;">
 
-        </form>
+            <h3 style="
+                color:#2F3E34;
+                margin-bottom:15px;
+            ">
+                Import Requirements
+            </h3>
 
+            <p style="color:#2F3E34;">
+                Supported formats:
+            </p>
+
+            <ul style="margin:10px 0 20px 20px; color:#2F3E34;">
+                <li>.csv</li>
+                <li>.xlsx</li>
+            </ul>
+
+            <p style="color:#2F3E34;">
+                Required columns:
+            </p>
+
+            <ul style="margin:10px 0 0 20px; color:#2F3E34;">
+                <li>question_text</li>
+                <li>option_a</li>
+                <li>option_b</li>
+                <li>option_c</li>
+                <li>option_d</li>
+                <li>correct_option</li>
+                <li>category</li>
+                <li>difficulty</li>
+            </ul>
+
+        </div>
+
+    </form>
     </div>
+
+</div>
 
 </div>
 {% endblock %}

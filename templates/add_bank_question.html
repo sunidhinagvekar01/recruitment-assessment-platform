@@ -5,32 +5,53 @@
 {% block content %}
 <div class="container">
 
-    <h1 class="page-title"> Add Question to Bank</h1>
+    
 
     <form method="POST">
 
-        <div class="card">
+    <div class="card">
 
-            <label>Question</label>
-            <textarea name="question_text" required
-                style="width:100%;min-height:100px"></textarea>
+        <div class="form-header">
+        <h1 class="form-title">Add Question to Bank</h1>
+        <p class="form-subtitle">
+        Create reusable questions for your assessments
+        </p>
+   </div>
 
-            <br><br>
+   <hr class="form-divider">
 
+    <div class="form-group">
+        <label>Question</label>
+        <textarea name="question_text" required></textarea>
+    </div>
+
+    <div class="option-grid">
+
+        <div class="form-group">
             <label>Option A</label>
-            <input type="text" name="option_a" required class="input">
+            <input type="text" name="option_a" required>
+        </div>
 
+        <div class="form-group">
             <label>Option B</label>
-            <input type="text" name="option_b" required class="input">
+            <input type="text" name="option_b" required>
+        </div>
 
+        <div class="form-group">
             <label>Option C</label>
-            <input type="text" name="option_c" required class="input">
+            <input type="text" name="option_c" required>
+        </div>
 
+        <div class="form-group">
             <label>Option D</label>
-            <input type="text" name="option_d" required class="input">
+            <input type="text" name="option_d" required>
+        </div>
 
-            <br>
+    </div>
 
+    <div class="meta-grid">
+
+        <div class="form-group">
             <label>Correct Option</label>
             <select name="correct_option">
                 <option>A</option>
@@ -38,28 +59,31 @@
                 <option>C</option>
                 <option>D</option>
             </select>
-
-            <br><br>
-
-            <label>Category</label>
-            <input type="text" name="category" required class="input">
-
-            <label>Difficulty</label>
-            <select name="difficulty">
-                <option>Easy</option>
-                <option>Medium</option>
-                <option>Hard</option>
-            </select>
-
-            <br><br>
-
-            <button type="submit" class="btn btn-primary">
-                Save Question
-            </button>
-
         </div>
 
-    </form>
+        <div class="form-group">
+            <label>Category</label>
+            <input type="text" name="category" required>
+        </div>
+
+    </div>
+
+    <div class="form-group">
+        <label>Difficulty</label>
+        <select name="difficulty">
+            <option>Easy</option>
+            <option>Medium</option>
+            <option>Hard</option>
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Save Question
+    </button>
+
+</div>
+
+</form>
 
 </div>
 {% endblock %}

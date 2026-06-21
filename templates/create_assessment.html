@@ -2,6 +2,27 @@
 {% block title %}Create Assessment{% endblock %}
 {% block head %}
 <style>
+.form-header{
+    background:#7F8E6F;
+    border-radius:16px;
+    padding:15px 20px;
+    text-align:center;
+    margin-bottom:25px;
+}
+
+.form-header h1{
+    color:white;
+    margin:0;
+    font-size:42px;
+}
+
+.form-header p{
+    color:white;
+    margin-top:10px;
+    margin-bottom:0;
+    font-size:16px;
+}
+
 .form-group{margin-bottom:18px;}
 
 .form-group label{
@@ -26,9 +47,11 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="container"></div>
-  <h1 class="page-title">Create Assessment</h1>
-  <p class="page-sub">Fill in the details below to set up a new assessment.</p>
+<div class="container">
+  <div class="form-header">
+    <h1>Create Assessment</h1>
+    <p>Build a new assessment and configure test settings</p>
+  </div>
   <div class="card">
     <form method="POST">
       <div class="form-group">

@@ -300,4 +300,50 @@ def delete_assessment(assessment_id):
 
     conn.commit()
     conn.close()
+
+def get_total_candidates():
+    conn = get_conn()
+
+    row = conn.execute("""
+        SELECT COUNT(DISTINCT candidate_id) as total
+        FROM scores
+    """).fetchone()
+
+    conn.close()
+
+    return row["total"] if row else 0
+
+
+def get_total_questions():
+    conn = get_conn()
+
+    row = conn.execute("""
+        SELECT COUNT(*) as total
+        FROM questions
+    """).fetchone()
+
+    conn.close()
+
+    return row["total"] if row else 0
+
+
+def get_completion_rate():
+    conn = get_conn()
+
+    assessments = conn.execute("""
+        SELECT COUNT(*) as total
+        FROM assessments
+    """).fetchone()["total"]
+
+    completed = conn.execute("""
+        SELECT COUNT(*) as total
+        FROM scores
+    """).fetchone()["total"]
+
+    conn.close()
+
+    if assessments == 0:
+        return 0
+
+    return round((completed / assessments) * 100)
    
