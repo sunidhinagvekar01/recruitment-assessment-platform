@@ -83,6 +83,46 @@ def add_question(assessment_id, text, a, b, c, d, correct, category, difficulty)
     conn.commit()
     conn.close()
 
+def get_question(question_id):
+    conn = get_conn()
+
+    question = conn.execute(
+        "SELECT * FROM questions WHERE id = ?",
+        (question_id,)
+    ).fetchone()
+
+    conn.close()
+    return question
+
+def update_question(question_id, text, a, b, c, d, correct, category, difficulty):
+    conn = get_conn()
+
+    conn.execute("""
+        UPDATE questions
+        SET question_text=?,
+            option_a=?,
+            option_b=?,
+            option_c=?,
+            option_d=?,
+            correct_option=?,
+            category=?,
+            difficulty=?
+        WHERE id=?
+    """, (
+        text,
+        a,
+        b,
+        c,
+        d,
+        correct,
+        category,
+        difficulty,
+        question_id
+    ))
+
+    conn.commit()
+    conn.close()
+
 def get_questions(assessment_id):
     conn = get_conn()
     rows = conn.execute(
@@ -193,6 +233,10 @@ def delete_question_from_bank(question_id):
         "DELETE FROM question_bank WHERE id = ?",
         (question_id,)
     )
+
+    conn.commit()
+    conn.close()
+    
 def get_question_from_bank(question_id):
     conn = get_conn()
 

@@ -1,0 +1,54 @@
+{% extends "recruiter_base.html" %}
+
+{% block title %}Edit Question{% endblock %}
+
+{% block content %}
+
+<div class="container">
+
+    <h2>Edit Question</h2>
+
+    <form method="POST">
+
+        <label>Question</label><br>
+        <textarea name="question_text" rows="3" style="width:100%;">{{ question.question_text }}</textarea><br><br>
+
+        <label>Option A</label><br>
+        <input type="text" name="option_a" value="{{ question.option_a }}" style="width:100%;"><br><br>
+
+        <label>Option B</label><br>
+        <input type="text" name="option_b" value="{{ question.option_b }}" style="width:100%;"><br><br>
+
+        <label>Option C</label><br>
+        <input type="text" name="option_c" value="{{ question.option_c }}" style="width:100%;"><br><br>
+
+        <label>Option D</label><br>
+        <input type="text" name="option_d" value="{{ question.option_d }}" style="width:100%;"><br><br>
+
+        <label>Correct Option</label><br>
+        <select name="correct_option">
+            <option value="A" {% if question.correct_option=="A" %}selected{% endif %}>A</option>
+            <option value="B" {% if question.correct_option=="B" %}selected{% endif %}>B</option>
+            <option value="C" {% if question.correct_option=="C" %}selected{% endif %}>C</option>
+            <option value="D" {% if question.correct_option=="D" %}selected{% endif %}>D</option>
+        </select><br><br>
+
+        <label>Category</label><br>
+        <input type="text" name="category" value="{{ question.category }}"><br><br>
+
+        <label>Difficulty</label><br>
+        <select name="difficulty">
+            <option value="Easy" {% if question.difficulty=="Easy" %}selected{% endif %}>Easy</option>
+            <option value="Medium" {% if question.difficulty=="Medium" %}selected{% endif %}>Medium</option>
+            <option value="Hard" {% if question.difficulty=="Hard" %}selected{% endif %}>Hard</option>
+        </select><br><br>
+
+        <button type="submit" class="btn btn-primary">
+            Save Changes
+        </button>
+
+    </form>
+
+</div>
+
+{% endblock %}

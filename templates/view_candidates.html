@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "recruiter_base.html" %}
 {% block title %}Candidates — {{ assessment.title }}{% endblock %}
 {% block content %}
 <div class="container">
@@ -19,21 +19,35 @@
 
   <!-- Summary KPIs -->
   {% set avg = (scores | map(attribute='percentage') | list | sum / scores|length) | round(1) %}
-  <div class="stat-grid" style="margin-bottom:28px">
-    <div class="stat-card"><div class="stat-val" style="color:#818cf8">{{ scores|length }}</div><div class="stat-lbl">Total Candidates</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#22c55e">{{ avg }}%</div><div class="stat-lbl">Average Score</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#38bdf8">{{ scores[0].percentage | round(1) }}%</div><div class="stat-lbl">Top Score</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#f59e0b">{{ (scores | selectattr('percentage', 'ge', 60) | list | length) }}</div><div class="stat-lbl">Passed (≥60%)</div></div>
+  <div class="stats-grid">
+
+    <div class="stat-card" style=" background:#E5F0FF;position:relative;overflow:hidden;">
+
+    <div class="stat-number">{{ scores|length }}</div><div class="stat-label">Total Candidates</div>
+
+</div>
+    
+    
+    <div class="stat-card"><div class="stat-number" style="color:#22c55e">{{ avg }}%</div><div class="stat-label">Average Score</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:#38bdf8">{{ scores[0].percentage | round(1) }}%</div><div class="stat-label">Top Score</div></div>
+    <div class="stat-card"><div class="stat-number" style="color:#f59e0b">{{ (scores | selectattr('percentage', 'ge', 60) | list | length) }}</div><div class="stat-label">Passed (≥60%)</div></div>
   </div>
 
-  <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;overflow:hidden;overflow-x:auto">
-    <table>
-      <thead>
-        <tr>
-          <th>Rank</th><th>Candidate</th><th>Email</th>
-          <th>Score</th><th>Correct</th><th>Wrong</th><th>Skipped</th><th>Avg Time</th><th></th>
-        </tr>
-      </thead>
+  <div class="card" style="padding:0;overflow-x:auto;"></div>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead style="background:#F6F9F3;">
+<tr>
+    <th style="padding:16px;text-align:left;">Rank</th>
+    <th style="padding:16px;text-align:left;">Candidate</th>
+    <th style="padding:16px;text-align:left;">Email</th>
+    <th style="padding:16px;text-align:left;">Score</th>
+    <th style="padding:16px;text-align:left;">Correct</th>
+    <th style="padding:16px;text-align:left;">Wrong</th>
+    <th style="padding:16px;text-align:left;">Skipped</th>
+    <th style="padding:16px;text-align:left;">Avg Time</th>
+    <th style="padding:16px;"></th>
+</tr>
+</thead>
       <tbody>
         {% for s in scores %}
         <tr>

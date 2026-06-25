@@ -25,7 +25,7 @@
             color:#111827;
             margin-bottom:10px;
         ">
-            Welcome back!
+            Welcome back, Recruiter!
         </h1>
 
         <p style="
@@ -51,11 +51,11 @@
             ">
 
         <img
-            src="{{ url_for('static', filename='images/dashboard_illustration.png') }}"
-            alt="Dashboard Illustration"
+            src="{{ url_for('static', filename='images/dashboard_illustration.svg') }}"
             style="
-                max-height:140px;
-                width:auto;"
+            max-height:180px;
+            width:auto;
+            "
         >
 
     </div>
@@ -328,20 +328,82 @@
             font-size:18px;
             font-weight:600;
         ">
-            Assessment Overview
+            Recruitment Overview
         </h3>
 
         <div style="
-            height:80px;
-            background:#F8FAF7;
-            border-radius:14px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            color:#94A3B8;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:15px;
+">
+
+    <div style="
+        background:#F8FAF7;
+        padding:16px;
+        border-radius:14px;
+        text-align:center;
+    ">
+        <div style="
+            font-size:28px;
+            font-weight:700;
+            color:#758467;
         ">
-            Assessment Analytics
+            {{ assessments|length }}
         </div>
+
+        <div style="
+            color:#64748B;
+            font-size:13px;
+        ">
+            Active Assessments
+        </div>
+    </div>
+
+    <div style="
+        background:#F8FAF7;
+        padding:16px;
+        border-radius:14px;
+        text-align:center;
+    ">
+        <div style="
+            font-size:28px;
+            font-weight:700;
+            color:#5A7EC8;
+        ">
+            {{ total_candidates }}
+        </div>
+
+        <div style="
+            color:#64748B;
+            font-size:13px;
+        ">
+            Candidates
+        </div>
+    </div>
+
+    <div style="
+        background:#F8FAF7;
+        padding:16px;
+        border-radius:14px;
+        text-align:center;
+    ">
+        <div style="
+            font-size:28px;
+            font-weight:700;
+            color:#D49A2D;
+        ">
+            {{ completion_rate }}%
+        </div>
+
+        <div style="
+            color:#64748B;
+            font-size:13px;
+        ">
+            Completion Rate
+        </div>
+    </div>
+
+</div>
 
     </div>
 
@@ -455,7 +517,7 @@
 
         <a href="/recruiter/assessment/{{ a.id }}/add-questions"
            class="btn btn-outline btn-sm">
-            Add Questions
+            Edit Questions
         </a>
 
         <a href="/recruiter/assessment/{{ a.id }}/candidates"

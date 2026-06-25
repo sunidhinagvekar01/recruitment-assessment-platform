@@ -383,6 +383,39 @@ def add_questions(assessment_id):
                            questions=questions,
                            success=success)
 
+@app.route('/recruiter/question/<int:question_id>/edit', methods=['GET', 'POST'])
+def edit_question(question_id):
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    from database import get_question, update_question
+
+    question = get_question(question_id)
+
+    if request.method == 'POST':
+        update_question(
+            question_id,
+            request.form['question_text'],
+            request.form['option_a'],
+            request.form['option_b'],
+            request.form['option_c'],
+            request.form['option_d'],
+            request.form['correct_option'],
+            request.form['category'],
+            request.form['difficulty']
+        )
+
+        return redirect(url_for(
+            'add_questions',
+            assessment_id=question['assessment_id']
+        ))
+
+    return render_template(
+        'edit_question.html',
+        question=question
+    )
+
 @app.route('/recruiter/<int:assessment_id>/import-questions', methods=['GET', 'POST'])
 def import_questions(assessment_id):
     guard = login_required('recruiter')
