@@ -3,9 +3,14 @@ from database import (create_user, login_user, get_user, get_all_assessments,
                       get_assessment, get_questions, save_response,
                       already_attempted, get_candidate_responses, get_score)
 from scoring import calculate_and_save_score, get_rank_label
-from analytics import get_candidate_analytics, get_percentile_rank
+from analytics import (
+    get_candidate_analytics,
+    get_percentile_rank,
+    get_recruiter_analytics
+)
 import json
 import pandas as pd
+import sqlite3
 app = Flask(__name__)
 app.secret_key = 'recruitment_secret_2025'
 
@@ -13,10 +18,14 @@ app.secret_key = 'recruitment_secret_2025'
 
 def login_required(role=None):
     """Call at top of any route to guard it."""
+
     if 'user_id' not in session:
+        session["next_url"] = request.url
         return redirect(url_for('login'))
+
     if role and session.get('role') != role:
         return redirect(url_for('dashboard'))
+
     return None
 
 
@@ -50,6 +59,11 @@ def login():
             session['user_id'] = user['id']
             session['name']    = user['name']
             session['role']    = user['role']
+            next_page = session.pop("next_url", None)
+
+            if next_page:
+                 return redirect(next_page)
+
             return redirect(url_for('dashboard'))
         error = 'Incorrect email or password.'
     return render_template('login.html', error=error)
@@ -502,19 +516,25 @@ def recruiter_candidate_detail(candidate_id, assessment_id):
     assessment = get_assessment(assessment_id)
     score_row  = get_score(candidate_id, assessment_id)
     analytics  = get_candidate_analytics(candidate_id, assessment_id)
+    print(analytics["performance_trend"])
+    from analytics import get_percentile_rank
+    percentile = get_percentile_rank(candidate_id, assessment_id)
     responses  = get_candidate_responses(candidate_id, assessment_id)
     rank_label, rank_emoji, rank_color = get_rank_label(
         score_row['percentage'] if score_row else 0
     )
-    return render_template('candidate_detail.html',
-                           candidate=candidate,
-                           assessment=assessment,
-                           score=score_row,
-                           analytics=analytics,
-                           responses=responses,
-                           rank_label=rank_label,
-                           rank_emoji=rank_emoji,
-                           rank_color=rank_color)
+    return render_template(
+        'candidate_detail.html',
+        candidate=candidate,
+        assessment=assessment,
+        score=score_row,
+        analytics=analytics,
+        responses=responses,
+        rank_label=rank_label,
+        rank_emoji=rank_emoji,
+        rank_color=rank_color,
+        percentile=percentile
+    )
 
 @app.route('/recruiter/assessment/<int:assessment_id>/upload',
            methods=['GET', 'POST'])
@@ -564,14 +584,38 @@ def upload_questions_to_assessment(assessment_id):
 
 @app.route('/recruiter/analytics')
 def recruiter_analytics():
+
     guard = login_required('recruiter')
     if guard:
         return guard
 
+    conn = sqlite3.connect('assessment.db')
+
+    assessments = conn.execute("""
+        SELECT id, title
+        FROM assessments
+        ORDER BY id
+    """).fetchall()
+
+    selected_assessment = request.args.get("assessment_id", type=int)
+
+    if not selected_assessment and assessments:
+        selected_assessment = assessments[0][0]
+
+    analytics = {}
+
+    if selected_assessment:
+        analytics = get_recruiter_analytics(selected_assessment)
+
+    conn.close()
+
     return render_template(
-        'analytics.html',
-        name=session['name']
-    )               
+        "analytics.html",
+        name=session["name"],
+        assessments=assessments,
+        selected_assessment=selected_assessment,
+        analytics=analytics
+    )
 
 @app.route('/recruiter/question-bank/upload',
            methods=['GET', 'POST'])

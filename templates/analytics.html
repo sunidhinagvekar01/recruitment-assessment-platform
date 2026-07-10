@@ -2,13 +2,278 @@
 
 {% block content %}
 
-<div class="container">
-    <h1>Analytics Dashboard</h1>
+<div class="card" style="padding:24px;margin-bottom:28px;">
 
-    <div class="card">
-        <h3>Coming Soon</h3>
-        <p>Assessment analytics will appear here.</p>
+    <div style="font-size:14px;color:#64748b;margin-bottom:10px;">
+        Select Assessment
     </div>
+
+    <form method="GET">
+
+    <select
+        name="assessment_id"
+        onchange="this.form.submit()"
+        style="
+            width:350px;
+            padding:12px 16px;
+            border:1px solid #DDE6D8;
+            border-radius:12px;
+            font-size:15px;
+            background:white;
+        "
+    >
+
+        {% for assessment in assessments %}
+
+        <option
+            value="{{ assessment[0] }}"
+            {% if assessment[0] == selected_assessment %}selected{% endif %}
+        >
+            {{ assessment[1] }}
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+</form>
+
+</div>
+
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(4,1fr);
+        gap:20px;
+    ">
+
+        <!-- Total Candidates -->
+        <div style="
+            background:#EEF5FF;
+            border-radius:18px;
+            padding:24px;
+        ">
+            <div style="
+                font-size:36px;
+                font-weight:700;
+                color:#4F7EFF;
+            ">
+                {{ analytics.total_candidates }}
+            </div>
+
+            <div style="color:#64748b;margin-top:8px;">
+                Total Candidates
+            </div>
+        </div>
+
+        <!-- Average Score -->
+        <div style="
+            background:#EDF9EE;
+            border-radius:18px;
+            padding:24px;
+        ">
+            <div style="
+                font-size:36px;
+                font-weight:700;
+                color:#22C55E;
+            ">
+                {{ analytics.avg_score }}%
+            </div>
+
+            <div style="color:#64748b;margin-top:8px;">
+                Average Score
+            </div>
+        </div>
+
+        <!-- Pass Rate -->
+        <div style="
+            background:#FFF8E7;
+            border-radius:18px;
+            padding:24px;
+        ">
+            <div style="
+                font-size:36px;
+                font-weight:700;
+                color:#F59E0B;
+            ">
+                {{ analytics.pass_rate }}%
+            </div>
+
+            <div style="color:#64748b;margin-top:8px;">
+                Pass Rate
+            </div>
+        </div>
+
+        <!-- Median Score -->
+        <div style="
+            background:#F3F0FF;
+            border-radius:18px;
+            padding:24px;
+        ">
+            <div style="
+                font-size:36px;
+                font-weight:700;
+                color:#7C3AED;
+            ">
+                {{ analytics.median_score }}%
+            </div>
+
+            <div style="color:#64748b;margin-top:8px;">
+                Median Score
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:20px;">
+        Top Candidates
+    </h2>
+
+    <table style="width:100%;border-collapse:collapse;">
+
+        <thead>
+            <tr style="border-bottom:1px solid #E5E7EB;">
+                <th style="text-align:left;padding:12px;">Rank</th>
+                <th style="text-align:left;padding:12px;">Candidate</th>
+                <th style="text-align:left;padding:12px;">Email</th>
+                <th style="text-align:right;padding:12px;">Score</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+        {% for candidate in analytics.top_candidates %}
+
+        <tr style="border-bottom:1px solid #F1F5F9;">
+
+            <td style="padding:12px;">
+                {{ loop.index }}
+            </td>
+
+            <td style="padding:12px;font-weight:600;">
+                {{ candidate.name }}
+            </td>
+
+            <td style="padding:12px;">
+                {{ candidate.email }}
+            </td>
+
+            <td style="padding:12px;text-align:right;font-weight:700;color:#4F7EFF;">
+                {{ candidate.percentage }}%
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:20px;">
+        Category Performance
+    </h2>
+
+    {% for category in analytics.category_avg %}
+
+    <div style="margin-bottom:20px;">
+
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+
+            <span style="font-weight:600;">
+                {{ category.category }}
+            </span>
+
+            <span style="font-weight:700;color:#4F7EFF;">
+                {{ category.avg_correct_pct }}%
+            </span>
+
+        </div>
+
+        <div style="
+            width:100%;
+            height:10px;
+            background:#E8EEE4;
+            border-radius:999px;
+        ">
+
+            <div style="
+                width:{{ category.avg_correct_pct }}%;
+                height:10px;
+                background:#758467;
+                border-radius:999px;
+            ">
+            </div>
+
+        </div>
+
+    </div>
+
+  
+
+    {% endfor %}
+
+<div class="card" style="padding:24px;margin-bottom:24px;">
+
+    <h2 style="margin-bottom:20px;">
+        Assessment Summary
+    </h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <div>
+
+            <p><strong>Total Candidates:</strong>
+                {{ analytics.total_candidates }}
+            </p>
+
+            <p><strong>Average Score:</strong>
+                {{ analytics.avg_score }}%
+            </p>
+
+            <p><strong>Median Score:</strong>
+                {{ analytics.median_score }}%
+            </p>
+
+            <p><strong>Pass Rate:</strong>
+                {{ analytics.pass_rate }}%
+            </p>
+
+        </div>
+
+        <div>
+
+            <p><strong>Strongest Categories:</strong></p>
+
+            <ul>
+                {% for cat in analytics.easiest_categories %}
+                <li>{{ cat }}</li>
+                {% endfor %}
+            </ul>
+
+            <p><strong>Most Challenging Categories:</strong></p>
+
+            <ul>
+                {% for cat in analytics.hardest_categories %}
+                <li>{{ cat }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    </div>
+
+</div>
+
 </div>
 
 {% endblock %}

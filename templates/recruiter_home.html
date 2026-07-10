@@ -525,6 +525,12 @@
             View Candidates →
         </a>
 
+        <button
+            class="btn btn-outline btn-sm"
+            onclick="copyQuizLink({{ a.id }})">
+            Share Link
+        </button>
+
         <a href="/recruiter/assessment/{{ a.id }}/delete"
            class="btn btn-danger btn-sm"
            onclick="return confirm('Delete this assessment?')">
@@ -578,6 +584,20 @@
 </div>
 
 </div>
+
+<script>
+
+function copyQuizLink(id){
+
+    const url = "https://recruitment-assessment-platform-q1hp.onrender.com/quiz/" + id;
+
+    navigator.clipboard.writeText(url);
+
+    alert("Quiz link copied!\n\n" + url);
+
+}
+
+</script>
 
 {% endblock %}
 

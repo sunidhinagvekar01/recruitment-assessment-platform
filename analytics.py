@@ -11,6 +11,8 @@ def get_candidate_analytics(candidate_id, assessment_id):
     """
     conn = sqlite3.connect(DB)
 
+
+
     df = pd.read_sql_query('''
         SELECT r.is_correct, r.time_taken, r.selected_option,
                q.category, q.difficulty, q.correct_option
@@ -56,15 +58,167 @@ def get_candidate_analytics(candidate_id, assessment_id):
     strengths  = cat[cat['percentage'] >= 60]['category'].tolist()
     weaknesses = cat[cat['percentage'] <  60]['category'].tolist()
 
+
+    # ── Strongest & Weakest Skill ─────────────────────────────
+
+    if not cat.empty:
+        strongest_skill = cat.sort_values(
+        by="percentage",
+        ascending=False
+        ).iloc[0]["category"]
+
+        weakest_skill = cat.sort_values(
+        by="percentage",
+        ascending=True
+        ).iloc[0]["category"]
+    else:
+        strongest_skill = "N/A"
+        weakest_skill = "N/A"
+
+    # ── Performance Metrics ───────────────────────────────────────
+
+    accuracy = round(
+        float(cat['correct'].sum() / cat['total'].sum() * 100),
+        1
+    )
+
+    performance_metrics = calculate_performance_metrics(
+        accuracy,
+        timing['avg'],
+        timing['std']
+    )
+
+    # ── Performance Trend ─────────────────────────────
+
+    performance_trend = []
+
+    running_correct = 0
+
+    for i, row in enumerate(df.itertuples(), start=1):
+
+        if row.is_correct == 1:
+            running_correct += 1
+
+        running_score = round((running_correct / i) * 100, 1)
+
+        performance_trend.append({
+            "question": i,
+            "score": running_score
+        })
+
+    # ── Hiring Recommendation ─────────────────────────────
+
+    performance_index = performance_metrics["performance_index"]
+
+    if performance_index >= 90:
+        hiring_recommendation = "Highly Recommended"
+
+    elif performance_index >= 75:
+        hiring_recommendation = "Recommended"
+
+    elif performance_index >= 60:
+        hiring_recommendation = "Consider"
+
+    else:
+        hiring_recommendation = "Needs Improvement"
+
     return {
-        'category_performance':    cat.to_dict('records'),
-        'difficulty_performance':  diff.to_dict('records'),
-        'timing':                  timing,
-        'strengths':               strengths,
-        'weaknesses':              weaknesses,
-        'total_questions':         len(df)
+        'category_performance': cat.to_dict('records'),
+        'difficulty_performance': diff.to_dict('records'),
+        'timing': timing,
+        'strengths': strengths,
+        'weaknesses': weaknesses,
+        'strongest_skill': strongest_skill,
+        'weakest_skill': weakest_skill,
+        'hiring_recommendation': hiring_recommendation,
+        'total_questions': len(df),
+        'performance_metrics': performance_metrics,
+        'performance_trend': performance_trend,
     }
 
+
+def calculate_performance_metrics(accuracy, avg_time, std_dev):
+    """
+    Calculates the overall Performance Index.
+
+    Formula:
+    70% Accuracy
+    15% Time Efficiency
+    15% Consistency
+    """
+
+
+    # Convert average time (0–60 sec) into a score out of 100
+    time_efficiency = max(
+        0,
+        ((60 - avg_time) / 60) * 100
+    )
+
+        # Speed Index
+    if avg_time <= 10:
+        speed_label = "Excellent"
+
+    elif avg_time <= 20:
+        speed_label = "Fast"
+
+    elif avg_time <= 35:
+        speed_label = "Moderate"
+
+    elif avg_time <= 50:
+        speed_label = "Slow"
+
+    else:
+        speed_label = "Very Slow"
+
+    # Lower standard deviation = more consistent
+    consistency = max(
+        0,
+        ((60 - std_dev) / 60) * 100
+    )
+
+    
+    # Consistency Level
+
+    if consistency >= 90:
+        consistency_label = "Excellent"
+
+    elif consistency >= 75:
+        consistency_label = "High"
+
+    elif consistency >= 60:
+        consistency_label = "Moderate"
+
+    elif consistency >= 40:
+        consistency_label = "Low"
+
+    else:
+        consistency_label = "Very Low"
+
+
+    performance_index = round(
+        (accuracy * 0.70)
+        + (time_efficiency * 0.15)
+        + (consistency * 0.15),
+        1
+    )
+
+    completion_rate = 100
+
+    confidence_score = round(
+    (accuracy * 0.60)
+    + (consistency * 0.25)
+    + (completion_rate * 0.15),
+    1
+)
+
+    return {
+    "performance_index": performance_index,
+    "confidence_score": confidence_score,
+    "time_efficiency": round(time_efficiency, 1),
+    "consistency_score": round(consistency, 1),
+    "consistency_level": consistency_label,
+    "speed_index": speed_label
+    }   
 
 def get_recruiter_analytics(assessment_id):
     """

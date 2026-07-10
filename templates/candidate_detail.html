@@ -1,116 +1,563 @@
-{% extends "base.html" %}
+{% extends "recruiter_base.html" %}
 {% block title %}{{ candidate.name }} — Detail{% endblock %}
 {% block head %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-  .chart-card { background:#1e293b; border:1px solid #334155; border-radius:14px; padding:24px; }
-  .chart-card h3 { font-size:13px; font-weight:600; color:#94a3b8; margin-bottom:16px; }
-  .track { width:100%; height:5px; background:#334155; border-radius:99px; }
-  .track-fill { height:100%; border-radius:99px; }
+
+.candidate-stat-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    margin-bottom:32px;
+}
+
+.candidate-stat-card{
+    background:white;
+    border:1px solid #DDE6D8;
+    border-radius:20px;
+    padding:24px;
+    transition:.25s;
+}
+
+.candidate-stat-card:hover{
+    transform:translateY(-4px);
+    box-shadow:0 8px 18px rgba(0,0,0,.08);
+}
+
+.candidate-stat-number{
+    font-size:38px;
+    font-weight:700;
+    line-height:1;
+    margin-bottom:10px;
+}
+
+.candidate-stat-label{
+    font-size:15px;
+    color:#64748b;
+}
+
+.chart-card h3{
+    color:#2F3E34;
+    font-size:18px;
+    margin-bottom:18px;
+}
+  
+.chart-card{
+    background:#fff;
+    border:1px solid #DDE6D8;
+    border-radius:20px;
+    padding:24px;
+    box-shadow:0 8px 24px rgba(0,0,0,.04);
+}
+
+.track{
+    width:100%;
+    height:8px;
+    background:#E7EEE2;
+    border-radius:999px;
+    overflow:hidden;
+}
+
+  .track-fill{
+    height:100%;
+    border-radius:99px;
+    background:#7D8D6B;
+}
+
+.analytics-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+    margin-bottom:30px;
+}
+
+.analytics-card{
+    padding:24px;
+    border-radius:18px;
+}
+
+.analytics-card h3{
+    font-size:18px;
+    margin-bottom:24px;
+    color:#2F3E34;
+}
+
+.track{
+    width:100%;
+    height:10px;
+    background:#EEF2E8;
+    border-radius:999px;
+}
+
+.track-fill{
+    height:100%;
+    background:#758467;
+    border-radius:999px;
+}
+
+.time-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:18px;
+}
+
+.time-grid div{
+    display:flex;
+    flex-direction:column;
+    padding:16px;
+    background:#F8FAF6;
+    border-radius:14px;
+}
+
+.time-grid span{
+    color:#6B7280;
+    font-size:13px;
+}
+
+.time-grid strong{
+    font-size:24px;
+    color:#2F3E34;
+    margin-top:6px;
+}
+
 </style>
 {% endblock %}
 {% block content %}
 <div class="container">
 
   <!-- Header -->
-  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px">
+  <div class="card" style="
+padding:30px;
+margin-bottom:30px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-radius:20px;
+">
+
     <div>
-      <h1 class="page-title">{{ candidate.name }}</h1>
-      <p class="page-sub" style="margin-bottom:0">{{ candidate.email }} · {{ assessment.title }}</p>
-    </div>
-    <a href="/recruiter/assessment/{{ assessment.id }}/candidates" class="btn btn-outline btn-sm">← All Candidates</a>
-  </div>
 
-  <!-- Rank + score cards -->
-  <div style="text-align:center;margin-bottom:24px">
-    <div style="font-size:36px;margin-bottom:6px">{{ rank_emoji }}</div>
-    <div class="badge badge-purple" style="font-size:14px;padding:6px 18px">{{ rank_label }}</div>
-  </div>
+        <div style="font-size:34px;font-weight:700;color:#2F3E34;">
+            {{ candidate.name }}
+        </div>
 
-  <div class="stat-grid" style="margin-bottom:24px">
-    <div class="stat-card"><div class="stat-val" style="color:#818cf8">{{ score.percentage | round(1) }}%</div><div class="stat-lbl">Score</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#22c55e">{{ score.correct_count }}</div><div class="stat-lbl">Correct</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#ef4444">{{ score.wrong_count }}</div><div class="stat-lbl">Wrong</div></div>
-    <div class="stat-card"><div class="stat-val" style="color:#f59e0b">{{ score.skipped_count }}</div><div class="stat-lbl">Skipped</div></div>
-  </div>
+        <div style="margin-top:8px;color:#64748b;font-size:16px;">
+            {{ candidate.email }}
+        </div>
 
-  <!-- Charts -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
-    <div class="chart-card">
-      <h3>Answer breakdown</h3>
-      <canvas id="donutChart" height="220"></canvas>
+        <div style="
+margin-top:28px;
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:28px;
+">
+
+    <div>
+        <div style="font-size:12px;color:#94a3b8;">
+            Assessment
+        </div>
+
+        <div style="font-weight:600;color:#2F3E34;margin-top:4px;">
+            {{ assessment.title }}
+        </div>
     </div>
-    <div class="chart-card">
-      <h3>Skill radar</h3>
-      <canvas id="radarChart" height="220"></canvas>
+
+    <div>
+        <div style="font-size:12px;color:#94a3b8;">
+            Questions
+        </div>
+
+        <div style="font-weight:600;color:#2F3E34;margin-top:4px;">
+            {{ analytics.total_questions }}
+        </div>
     </div>
-  </div>
+
+    <div>
+        <div style="font-size:12px;color:#94a3b8;">
+            Avg Time
+        </div>
+
+        <div style="font-weight:600;color:#2F3E34;margin-top:4px;">
+            {{ analytics.timing.avg }} s
+        </div>
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#94a3b8;">
+            Accuracy
+        </div>
+
+        <div style="font-weight:600;color:#2F3E34;margin-top:4px;">
+            {{ score.percentage }}%
+        </div>
+    </div>
+
+</div>
+
+    </div>
+
+    <div style="text-align:center; min-width:240px;">
+
+    <div style="
+        font-size:13px;
+        color:#64748b;
+        margin-bottom:8px;
+    ">
+        Overall Grade
+    </div>
+
+    <div style="
+        font-size:58px;
+        font-weight:800;
+        color:{{ rank_color }};
+        line-height:1;
+    ">
+        {% if score.percentage >= 90 %}
+            A+
+        {% elif score.percentage >= 80 %}
+            A
+        {% elif score.percentage >= 70 %}
+            B+
+        {% elif score.percentage >= 60 %}
+            B
+        {% elif score.percentage >= 50 %}
+            C
+        {% else %}
+            D
+        {% endif %}
+    </div>
+
+    <div style="
+        display:inline-block;
+        margin-top:12px;
+        padding:8px 18px;
+        background:#4CAF50;
+        color:white;
+        border-radius:20px;
+        font-size:14px;
+        font-weight:600;
+    ">
+        {{ rank_label }}
+    </div>
+
+    <div style="
+        margin-top:12px;
+        color:#64748b;
+        font-size:14px;
+    ">
+        Top Performer
+    </div>
+
+    <a href="/recruiter/assessment/{{ assessment.id }}/candidates"
+       class="btn btn-outline btn-sm"
+       style="margin-top:18px;">
+        ← Back
+    </a>
+
+</div>
+
+</div>
+
+  <div class="candidate-stat-grid">
+
+    <div class="candidate-stat-card" style="background:#EEF5FF;">
+        <div class="candidate-stat-number" style="color:#4F7EFF;">
+            {{ score.percentage | round(1) }}%
+        </div>
+        <div class="candidate-stat-label">
+            Accuracy
+        </div>
+    </div>
+
+    <div class="candidate-stat-card" style="background:#EDF9EE;">
+        <div class="candidate-stat-number" style="color:#22C55E;">
+            {{ percentile }}%
+        </div>
+        <div class="candidate-stat-label">
+            Percentile Rank
+        </div>
+    </div>
+
+    <div class="candidate-stat-card" style="background:#FFF8E7;">
+        <div class="candidate-stat-number" style="color:#F59E0B;">
+            {{ analytics.timing.avg }}s
+        </div>
+        <div class="candidate-stat-label">
+            Average Time
+        </div>
+    </div>
+
+    <div class="candidate-stat-card" style="background:#F3F0FF;">
+        <div class="candidate-stat-number" style="color:#7C3AED;">
+        {{ analytics.timing.median }}s
+        </div>
+        <div class="candidate-stat-label">
+        Performance Index
+        </div>
+    </div>
+
+    <div class="candidate-stat-card" style="background:#FFF1F1;">
+        <div class="candidate-stat-number" style="color:#EF4444;">
+        {{ analytics.performance_metrics.confidence_score }}
+        </div>
+        <div class="candidate-stat-label">
+        Confidence Score
+        </div>
+    </div>
+
+    <div class="candidate-stat-card" style="background:#F0FDF4;">
+        <div class="candidate-stat-number" style="color:#15803D;">
+        {{ analytics.performance_metrics.speed_index }}
+        </div>
+        <div class="candidate-stat-label">
+        Speed Index
+        </div>
+    </div>
+
+    <div style="background:#FFFBEA;padding:18px;border-radius:14px;">
+        <div style="font-size:13px;color:#D97706;">
+        🏆 Performance Index
+        </div>
+
+        <div style="font-size:20px;font-weight:700;color:#2F3E34;margin-top:8px;">
+        {{ analytics.performance_metrics.performance_index }}
+        </div>
+    </div>
+
+</div>
+
+ <!-- Analytics Row -->
+
+<div class="analytics-grid">
+
+    <!-- Difficulty Performance -->
+
+    <div class="card analytics-card">
+
+        <h3>Performance by Difficulty</h3>
+
+        {% for diff in analytics.difficulty_performance %}
+
+        <div style="margin-bottom:20px;">
+
+            <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+
+                <span>{{ diff.difficulty }}</span>
+
+                <strong>{{ diff.percentage }}%</strong>
+
+            </div>
+
+            <div class="track">
+
+                <div class="track-fill"
+                     style="width:{{ diff.percentage }}%;">
+                </div>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+
+    <!-- Time Analytics -->
+
+    <div class="card analytics-card">
+
+        <h3>Time Analytics</h3>
+
+        <div class="time-grid">
+
+            <div>
+                <span>Average</span>
+                <strong>{{ analytics.timing.avg }} s</strong>
+            </div>
+
+            <div>
+                <span>Median</span>
+                <strong>{{ analytics.timing.median }} s</strong>
+            </div>
+
+            <div>
+                <span>Fastest</span>
+                <strong>{{ analytics.timing.fastest }} s</strong>
+            </div>
+
+            <div>
+                <span>Slowest</span>
+                <strong>{{ analytics.timing.slowest }} s</strong>
+            </div>
+
+            <div>
+                <span>Std. Dev.</span>
+                <strong>{{ analytics.timing.std }} s</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 
   <!-- Category breakdown -->
   <h2 style="font-size:14px;font-weight:600;color:#475569;letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">Category breakdown</h2>
+
   {% for cat in analytics.category_performance %}
-  <div style="background:#1e293b;border:1px solid #334155;border-radius:12px;padding:16px 20px;margin-bottom:10px">
+
+<div class="card" style="padding:18px 22px;margin-bottom:14px">
+
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-      <span style="font-size:14px;font-weight:600">{{ cat.category }}</span>
-      <span style="font-size:14px;font-weight:700;color:#818cf8">{{ cat.percentage }}%</span>
-    </div>
-    <div class="track"><div class="track-fill" style="width:{{ cat.percentage }}%;background:#6366f1"></div></div>
-    <div style="font-size:12px;color:#475569;margin-top:6px">{{ cat.correct }} / {{ cat.total }} correct</div>
-  </div>
-  {% endfor %}
+        <span style="font-size:14px;font-weight:600">
+            {{ cat.category }}
+        </span>
 
-  <!-- Strengths / weaknesses -->
-  {% if analytics.strengths or analytics.weaknesses %}
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0">
-    <div class="card">
-      <div class="card-title" style="color:#22c55e">✓ Strengths</div>
-      {% for s in analytics.strengths %}<span class="badge badge-green" style="margin-right:6px;margin-bottom:6px">{{ s }}</span>{% endfor %}
-      {% if not analytics.strengths %}<p style="font-size:13px;color:#64748b">None above 60%</p>{% endif %}
+        <span style="font-size:14px;font-weight:700;color:#818cf8">
+            {{ cat.percentage }}%
+        </span>
     </div>
-    <div class="card">
-      <div class="card-title" style="color:#ef4444">✗ Needs improvement</div>
-      {% for w in analytics.weaknesses %}<span class="badge badge-red" style="margin-right:6px;margin-bottom:6px">{{ w }}</span>{% endfor %}
-      {% if not analytics.weaknesses %}<p style="font-size:13px;color:#64748b">No weak areas</p>{% endif %}
-    </div>
-  </div>
-  {% endif %}
 
-  <!-- Answer review -->
-  <h2 style="font-size:14px;font-weight:600;color:#475569;letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">Full answer review</h2>
-  <div style="background:#1e293b;border:1px solid #334155;border-radius:14px;overflow:hidden;overflow-x:auto;margin-bottom:28px">
-    <table>
-      <thead><tr><th>#</th><th>Question</th><th>Category</th><th>Time</th><th>Result</th></tr></thead>
-      <tbody>
-        {% for r in responses %}
-        <tr>
-          <td style="color:#475569">{{ loop.index }}</td>
-          <td style="color:#e2e8f0;max-width:280px;line-height:1.5">{{ r.question_text }}</td>
-          <td><span class="badge badge-blue">{{ r.category }}</span></td>
-          <td style="color:#64748b">{{ r.time_taken }}s</td>
-          <td>
-            {% if r.is_correct == 1 %}<span class="badge badge-green">✓ Correct</span>
-            {% elif r.is_correct == 0 %}<span class="badge badge-red">✗ Wrong</span>
-            {% else %}<span class="badge badge-gray">Skipped</span>{% endif %}
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+    <div class="track">
+        <div class="track-fill"
+             style="width:{{ cat.percentage }}%">
+        </div>
+    </div>
+
+    <div style="font-size:12px;color:#475569;margin-top:6px">
+        {{ cat.correct }} / {{ cat.total }} correct
+    </div>
 
 </div>
-<script>
-Chart.defaults.color = '#64748b';
-const catData = {{ analytics.category_performance | tojson }};
-new Chart(document.getElementById('donutChart'), {
-  type:'doughnut',
-  data:{ labels:['Correct','Wrong','Skipped'], datasets:[{ data:[{{ score.correct_count }},{{ score.wrong_count }},{{ score.skipped_count }}], backgroundColor:['#22c55e','#ef4444','#f59e0b'], borderColor:'#1e293b', borderWidth:3 }] },
-  options:{ responsive:true, cutout:'68%', plugins:{ legend:{ position:'bottom', labels:{color:'#94a3b8',padding:14} } } }
-});
-new Chart(document.getElementById('radarChart'), {
-  type:'radar',
-  data:{ labels:catData.map(c=>c.category), datasets:[{ label:'Score %', data:catData.map(c=>c.percentage), backgroundColor:'#6366f133', borderColor:'#818cf8', borderWidth:2, pointBackgroundColor:'#818cf8', pointRadius:4 }] },
-  options:{ responsive:true, scales:{ r:{ beginAtZero:true, max:100, grid:{color:'#334155'}, angleLines:{color:'#334155'}, ticks:{display:false}, pointLabels:{color:'#94a3b8',font:{size:11}} } }, plugins:{legend:{display:false}} }
-});
-</script>
+
+{% endfor %}
+
+  <!-- Strengths / weaknesses -->
+  <div class="card" style="padding:26px;margin:28px 0;">
+
+    <div style="
+        font-size:20px;
+        font-weight:700;
+        color:#2F3E34;
+        margin-bottom:22px;
+    ">
+        Recruiter Insights
+    </div>
+
+    <div style="
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:18px;
+    ">
+
+        <div style="background:#F7F9F4;padding:18px;border-radius:14px;">
+            <div style="font-size:13px;color:#758467;">⭐ Strongest Skill</div>
+            <div style="font-size:20px;font-weight:700;color:#2F3E34;margin-top:8px;">
+                {{ analytics.strongest_skill }}
+            </div>
+        </div>
+
+        <div style="background:#FFF5F5;padding:18px;border-radius:14px;">
+            <div style="font-size:13px;color:#C97A6B;">📉 Weakest Skill</div>
+            <div style="font-size:20px;font-weight:700;color:#2F3E34;margin-top:8px;">
+                {{ analytics.weakest_skill }}
+            </div>
+        </div>
+
+        <div style="background:#EEF5FF;padding:18px;border-radius:14px;">
+            <div style="font-size:13px;color:#5B6EF5;">⚡ Speed Index</div>
+            <div style="font-size:20px;font-weight:700;color:#2F3E34;margin-top:8px;">
+                {{ analytics.performance_metrics.speed_index }}
+            </div>
+        </div>
+
+        <div style="background:#EDF9EE;padding:18px;border-radius:14px;">
+            <div style="font-size:13px;color:#22C55E;">🎯 Hiring Recommendation</div>
+            <div style="font-size:20px;font-weight:700;color:#2F3E34;margin-top:8px;">
+                <span style="
+                 display:inline-block;
+                 padding:8px 16px;
+                 background:#22C55E;
+                 color:white;
+                 border-radius:999px;
+                 font-weight:600;">{{ analytics.hiring_recommendation }}
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+ <!-- Answer review -->
+
+<h2 style="font-size:14px;font-weight:600;color:#475569;letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px">
+    Full Answer Review
+</h2>
+
+<div class="card" style="padding:0;margin-bottom:28px;overflow:hidden;">
+
+    <div style="overflow-x:auto;">
+
+        <table style="width:100%;min-width:900px;">
+
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Question</th>
+                    <th>Category</th>
+                    <th>Time</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for r in responses %}
+
+                <tr>
+
+                    <td>{{ loop.index }}</td>
+
+                    <td style="max-width:400px;">
+                        {{ r.question_text }}
+                    </td>
+
+                    <td>
+                        <span class="badge badge-blue">
+                            {{ r.category }}
+                        </span>
+                    </td>
+
+                    <td>{{ r.time_taken }}s</td>
+
+                    <td>
+
+                        {% if r.is_correct == 1 %}
+                            <span class="badge badge-green">✓ Correct</span>
+
+                        {% elif r.is_correct == 0 %}
+                            <span class="badge badge-red">✗ Wrong</span>
+
+                        {% else %}
+                            <span class="badge badge-gray">Skipped</span>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+</div>
 {% endblock %}
