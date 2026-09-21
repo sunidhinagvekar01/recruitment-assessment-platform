@@ -504,7 +504,7 @@
     font-size:13px;
     ">
         <span>{{ a.time_limit }}s per question</span>
-        <span>Created {{ a.created_at[:10] }}</span>
+        <span>Created {{ a.created_at.strftime('%Y-%m-%d') }}</span>
     </div>
 
 </div>   

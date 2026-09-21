@@ -1,253 +1,582 @@
-import sqlite3
+import os
 import hashlib
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from dotenv import load_dotenv
 
-DB = 'assessment.db'
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 def get_conn():
-    conn = sqlite3.connect(DB, timeout=30)
-    conn.row_factory = sqlite3.Row   # lets you access columns by name like dict
-    return conn
+    return psycopg2.connect(
+        DATABASE_URL,
+        sslmode="require"
+    )
+
+
+def get_cursor(conn):
+    return conn.cursor(cursor_factory=RealDictCursor)
+
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
 
 # ── USER FUNCTIONS ────────────────────────────────────────────────────────
 
 def create_user(name, email, password, role='candidate'):
     conn = get_conn()
+    cur = get_cursor(conn)
 
     try:
-        conn.execute(
-            "INSERT INTO users (name,email,password,role) VALUES (?,?,?,?)",
+        cur.execute(
+            """
+            INSERT INTO users (name, email, password, role)
+            VALUES (%s, %s, %s, %s)
+            """,
             (name, email, hash_password(password), role)
         )
         conn.commit()
         return True, "Account created!"
 
-    except sqlite3.IntegrityError:
+    except psycopg2.IntegrityError:
+        conn.rollback()
         return False, "Email already registered."
 
     finally:
+        cur.close()
         conn.close()
+
 
 def login_user(email, password):
     conn = get_conn()
-    user = conn.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT *
+        FROM users
+        WHERE email=%s AND password=%s
+        """,
         (email, hash_password(password))
-    ).fetchone()
+    )
+
+    user = cur.fetchone()
+
+    cur.close()
     conn.close()
+
     return dict(user) if user else None
+
 
 def get_user(user_id):
     conn = get_conn()
-    user = conn.execute("SELECT * FROM users WHERE id=?", (user_id,)).fetchone()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        "SELECT * FROM users WHERE id=%s",
+        (user_id,)
+    )
+
+    user = cur.fetchone()
+
+    cur.close()
     conn.close()
+
     return dict(user) if user else None
+
 
 # ── ASSESSMENT FUNCTIONS ──────────────────────────────────────────────────
 
 def get_all_assessments():
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT a.*, u.name as recruiter_name FROM assessments a JOIN users u ON a.created_by=u.id WHERE a.is_active=1"
-    ).fetchall()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT a.*, u.name AS recruiter_name
+        FROM assessments a
+        JOIN users u ON a.created_by = u.id
+        WHERE a.is_active = 1
+        """
+    )
+
+    rows = cur.fetchall()
+
+    cur.close()
     conn.close()
+
     return [dict(r) for r in rows]
+
 
 def get_assessment(assessment_id):
     conn = get_conn()
-    row = conn.execute("SELECT * FROM assessments WHERE id=?", (assessment_id,)).fetchone()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        "SELECT * FROM assessments WHERE id=%s",
+        (assessment_id,)
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
+
     return dict(row) if row else None
+
 
 def create_assessment(title, description, created_by, time_limit=60):
     conn = get_conn()
-    cursor = conn.execute(
-        "INSERT INTO assessments (title,description,created_by,time_limit) VALUES (?,?,?,?)",
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        INSERT INTO assessments
+        (title, description, created_by, time_limit)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id
+        """,
         (title, description, created_by, time_limit)
     )
-    assessment_id = cursor.lastrowid
+
+    assessment_id = cur.fetchone()["id"]
+
     conn.commit()
+    cur.close()
     conn.close()
+
     return assessment_id
+
 
 # ── QUESTION FUNCTIONS ────────────────────────────────────────────────────
 
-def add_question(assessment_id, text, a, b, c, d, correct, category, difficulty):
+def add_question(
+    assessment_id,
+    text,
+    a,
+    b,
+    c,
+    d,
+    correct,
+    category,
+    difficulty
+):
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO questions (assessment_id,question_text,option_a,option_b,option_c,option_d,correct_option,category,difficulty) VALUES (?,?,?,?,?,?,?,?,?)",
-        (assessment_id, text, a, b, c, d, correct, category, difficulty)
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        INSERT INTO questions
+        (
+            assessment_id,
+            question_text,
+            option_a,
+            option_b,
+            option_c,
+            option_d,
+            correct_option,
+            category,
+            difficulty
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            assessment_id,
+            text,
+            a,
+            b,
+            c,
+            d,
+            correct,
+            category,
+            difficulty
+        )
     )
+
     conn.commit()
+    cur.close()
     conn.close()
+
 
 def get_question(question_id):
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    question = conn.execute(
-        "SELECT * FROM questions WHERE id = ?",
+    cur.execute(
+        "SELECT * FROM questions WHERE id=%s",
         (question_id,)
-    ).fetchone()
+    )
 
+    question = cur.fetchone()
+
+    cur.close()
     conn.close()
-    return question
 
-def update_question(question_id, text, a, b, c, d, correct, category, difficulty):
+    return dict(question) if question else None
+
+
+def update_question(
+    question_id,
+    text,
+    a,
+    b,
+    c,
+    d,
+    correct,
+    category,
+    difficulty
+):
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    conn.execute("""
+    cur.execute(
+        """
         UPDATE questions
-        SET question_text=?,
-            option_a=?,
-            option_b=?,
-            option_c=?,
-            option_d=?,
-            correct_option=?,
-            category=?,
-            difficulty=?
-        WHERE id=?
-    """, (
-        text,
-        a,
-        b,
-        c,
-        d,
-        correct,
-        category,
-        difficulty,
-        question_id
-    ))
+        SET
+            question_text=%s,
+            option_a=%s,
+            option_b=%s,
+            option_c=%s,
+            option_d=%s,
+            correct_option=%s,
+            category=%s,
+            difficulty=%s
+        WHERE id=%s
+        """,
+        (
+            text,
+            a,
+            b,
+            c,
+            d,
+            correct,
+            category,
+            difficulty,
+            question_id
+        )
+    )
 
     conn.commit()
+    cur.close()
     conn.close()
+
 
 def get_questions(assessment_id):
     conn = get_conn()
-    rows = conn.execute(
-        "SELECT * FROM questions WHERE assessment_id=? ORDER BY RANDOM()",
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT *
+        FROM questions
+        WHERE assessment_id=%s
+        ORDER BY RANDOM()
+        """,
         (assessment_id,)
-    ).fetchall()
+    )
+
+    rows = cur.fetchall()
+
+    cur.close()
     conn.close()
+
     return [dict(r) for r in rows]
+
 
 # ── RESPONSE FUNCTIONS ────────────────────────────────────────────────────
 
-def save_response(candidate_id, assessment_id, question_id, selected_option, is_correct, time_taken):
+def save_response(
+    candidate_id,
+    assessment_id,
+    question_id,
+    selected_option,
+    is_correct,
+    time_taken
+):
     conn = get_conn()
-    conn.execute(
-        "INSERT INTO responses (candidate_id,assessment_id,question_id,selected_option,is_correct,time_taken) VALUES (?,?,?,?,?,?)",
-        (candidate_id, assessment_id, question_id, selected_option, is_correct, time_taken)
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        INSERT INTO responses
+        (
+            candidate_id,
+            assessment_id,
+            question_id,
+            selected_option,
+            is_correct,
+            time_taken
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """,
+        (
+            candidate_id,
+            assessment_id,
+            question_id,
+            selected_option,
+            is_correct,
+            time_taken
+        )
     )
+
     conn.commit()
+    cur.close()
     conn.close()
+
 
 def already_attempted(candidate_id, assessment_id):
     conn = get_conn()
-    row = conn.execute(
-        "SELECT id FROM scores WHERE candidate_id=? AND assessment_id=?",
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT id
+        FROM scores
+        WHERE candidate_id=%s AND assessment_id=%s
+        """,
         (candidate_id, assessment_id)
-    ).fetchone()
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
+
     return row is not None
+
 
 def get_candidate_responses(candidate_id, assessment_id):
     conn = get_conn()
-    rows = conn.execute('''
-        SELECT r.*, q.question_text, q.option_a, q.option_b, q.option_c, q.option_d,
-               q.correct_option, q.category, q.difficulty
-        FROM responses r JOIN questions q ON r.question_id=q.id
-        WHERE r.candidate_id=? AND r.assessment_id=?
-    ''', (candidate_id, assessment_id)).fetchall()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT
+            r.*,
+            q.question_text,
+            q.option_a,
+            q.option_b,
+            q.option_c,
+            q.option_d,
+            q.correct_option,
+            q.category,
+            q.difficulty
+        FROM responses r
+        JOIN questions q
+            ON r.question_id = q.id
+        WHERE r.candidate_id=%s
+          AND r.assessment_id=%s
+        """,
+        (candidate_id, assessment_id)
+    )
+
+    rows = cur.fetchall()
+
+    cur.close()
     conn.close()
+
     return [dict(r) for r in rows]
+
 
 # ── SCORE FUNCTIONS ───────────────────────────────────────────────────────
 
-def save_score(candidate_id, assessment_id, total_score, max_score,
-               percentage, correct, wrong, skipped, avg_time):
+def save_score(
+    candidate_id,
+    assessment_id,
+    total_score,
+    max_score,
+    percentage,
+    correct,
+    wrong,
+    skipped,
+    avg_time
+):
     conn = get_conn()
-    conn.execute('''
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
         INSERT INTO scores
-        (candidate_id,assessment_id,total_score,max_score,percentage,
-         correct_count,wrong_count,skipped_count,avg_time_per_q)
-        VALUES (?,?,?,?,?,?,?,?,?)
-    ''', (candidate_id, assessment_id, total_score, max_score,
-          percentage, correct, wrong, skipped, avg_time))
+        (
+            candidate_id,
+            assessment_id,
+            total_score,
+            max_score,
+            percentage,
+            correct_count,
+            wrong_count,
+            skipped_count,
+            avg_time_per_q
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            candidate_id,
+            assessment_id,
+            total_score,
+            max_score,
+            percentage,
+            correct,
+            wrong,
+            skipped,
+            avg_time
+        )
+    )
+
     conn.commit()
+    cur.close()
     conn.close()
+
 
 def get_score(candidate_id, assessment_id):
     conn = get_conn()
-    row = conn.execute(
-        "SELECT * FROM scores WHERE candidate_id=? AND assessment_id=?",
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT *
+        FROM scores
+        WHERE candidate_id=%s
+          AND assessment_id=%s
+        """,
         (candidate_id, assessment_id)
-    ).fetchone()
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
+
     return dict(row) if row else None
+
 
 def get_all_scores_for_assessment(assessment_id):
     conn = get_conn()
-    rows = conn.execute('''
-        SELECT s.*, u.name, u.email
-        FROM scores s JOIN users u ON s.candidate_id=u.id
-        WHERE s.assessment_id=?
-        ORDER BY s.percentage DESC, s.avg_time_per_q ASC
-    ''', (assessment_id,)).fetchall()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT
+            s.*,
+            u.name,
+            u.email
+        FROM scores s
+        JOIN users u
+            ON s.candidate_id = u.id
+        WHERE s.assessment_id=%s
+        ORDER BY s.percentage DESC,
+                 s.avg_time_per_q ASC
+        """,
+        (assessment_id,)
+    )
+
+    rows = cur.fetchall()
+
+    cur.close()
     conn.close()
+
     return [dict(r) for r in rows]
 
-def add_question_to_bank(question_text, option_a, option_b,
-                         option_c, option_d, correct_option,
-                         category, difficulty):
+
+# ── QUESTION BANK ─────────────────────────────────────────────────────────
+
+def add_question_to_bank(
+    question_text,
+    option_a,
+    option_b,
+    option_c,
+    option_d,
+    correct_option,
+    category,
+    difficulty
+):
     conn = get_conn()
-    conn.execute('''
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
         INSERT INTO question_bank
-        (question_text, option_a, option_b, option_c,
-         option_d, correct_option, category, difficulty)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        question_text, option_a, option_b,
-        option_c, option_d, correct_option,
-        category, difficulty
-    ))
+        (
+            question_text,
+            option_a,
+            option_b,
+            option_c,
+            option_d,
+            correct_option,
+            category,
+            difficulty
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """,
+        (
+            question_text,
+            option_a,
+            option_b,
+            option_c,
+            option_d,
+            correct_option,
+            category,
+            difficulty
+        )
+    )
+
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def get_question_bank():
     conn = get_conn()
-    rows = conn.execute('''
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
         SELECT *
         FROM question_bank
         ORDER BY category, difficulty
-    ''').fetchall()
+        """
+    )
+
+    rows = cur.fetchall()
+
+    cur.close()
     conn.close()
-    return rows
+
+    return [dict(r) for r in rows]
+
 
 def delete_question_from_bank(question_id):
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    conn.execute(
-        "DELETE FROM question_bank WHERE id = ?",
+    cur.execute(
+        "DELETE FROM question_bank WHERE id=%s",
         (question_id,)
     )
 
     conn.commit()
+    cur.close()
     conn.close()
-    
+
+
 def get_question_from_bank(question_id):
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    row = conn.execute(
-        "SELECT * FROM question_bank WHERE id=?",
+    cur.execute(
+        "SELECT * FROM question_bank WHERE id=%s",
         (question_id,)
-    ).fetchone()
+    )
 
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
 
-    return row
+    return dict(row) if row else None
 
 
 def update_question_in_bank(
@@ -262,40 +591,49 @@ def update_question_in_bank(
     difficulty
 ):
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    conn.execute("""
+    cur.execute(
+        """
         UPDATE question_bank
         SET
-            question_text=?,
-            option_a=?,
-            option_b=?,
-            option_c=?,
-            option_d=?,
-            correct_option=?,
-            category=?,
-            difficulty=?
-        WHERE id=?
-    """,
-    (
-        question_text,
-        option_a,
-        option_b,
-        option_c,
-        option_d,
-        correct_option,
-        category,
-        difficulty,
-        question_id
-    ))
+            question_text=%s,
+            option_a=%s,
+            option_b=%s,
+            option_c=%s,
+            option_d=%s,
+            correct_option=%s,
+            category=%s,
+            difficulty=%s
+        WHERE id=%s
+        """,
+        (
+            question_text,
+            option_a,
+            option_b,
+            option_c,
+            option_d,
+            correct_option,
+            category,
+            difficulty,
+            question_id
+        )
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
 
 def bulk_add_questions_to_bank(df):
-
     conn = get_conn()
+    cur = get_cursor(conn)
 
     for _, row in df.iterrows():
-
-        conn.execute("""
-            INSERT INTO question_bank (
+        cur.execute(
+            """
+            INSERT INTO question_bank
+            (
                 question_text,
                 option_a,
                 option_b,
@@ -305,54 +643,72 @@ def bulk_add_questions_to_bank(df):
                 category,
                 difficulty
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            row['question_text'],
-            row['option_a'],
-            row['option_b'],
-            row['option_c'],
-            row['option_d'],
-            row['correct_option'],
-            row['category'],
-            row['difficulty']
-        ))
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                row['question_text'],
+                row['option_a'],
+                row['option_b'],
+                row['option_c'],
+                row['option_d'],
+                row['correct_option'],
+                row['category'],
+                row['difficulty']
+            )
+        )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+# ── ASSESSMENT DELETE ─────────────────────────────────────────────────────
 
 def delete_assessment(assessment_id):
-
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    conn.execute(
-        "DELETE FROM responses WHERE assessment_id=?",
+    cur.execute(
+        "DELETE FROM responses WHERE assessment_id=%s",
         (assessment_id,)
     )
 
-    conn.execute(
-        "DELETE FROM scores WHERE assessment_id=?",
+    cur.execute(
+        "DELETE FROM scores WHERE assessment_id=%s",
         (assessment_id,)
     )
 
-    conn.execute(
-        "DELETE FROM questions WHERE assessment_id=?",
+    cur.execute(
+        "DELETE FROM questions WHERE assessment_id=%s",
         (assessment_id,)
     )
 
-    conn.execute(
-        "DELETE FROM assessments WHERE id=?",
+    cur.execute(
+        "DELETE FROM assessments WHERE id=%s",
         (assessment_id,)
     )
 
     conn.commit()
+    cur.close()
     conn.close()
+
+
+# ── DASHBOARD FUNCTIONS ───────────────────────────────────────────────────
 
 def get_total_candidates():
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    row = conn.execute("""
-        SELECT COUNT(DISTINCT candidate_id) as total
+    cur.execute(
+        """
+        SELECT COUNT(DISTINCT candidate_id) AS total
         FROM scores
-    """).fetchone()
+        """
+    )
 
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
 
     return row["total"] if row else 0
@@ -360,12 +716,18 @@ def get_total_candidates():
 
 def get_total_questions():
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    row = conn.execute("""
-        SELECT COUNT(*) as total
+    cur.execute(
+        """
+        SELECT COUNT(*) AS total
         FROM questions
-    """).fetchone()
+        """
+    )
 
+    row = cur.fetchone()
+
+    cur.close()
     conn.close()
 
     return row["total"] if row else 0
@@ -373,21 +735,30 @@ def get_total_questions():
 
 def get_completion_rate():
     conn = get_conn()
+    cur = get_cursor(conn)
 
-    assessments = conn.execute("""
-        SELECT COUNT(*) as total
+    cur.execute(
+        """
+        SELECT COUNT(*) AS total
         FROM assessments
-    """).fetchone()["total"]
+        """
+    )
 
-    completed = conn.execute("""
-        SELECT COUNT(*) as total
+    assessments = cur.fetchone()["total"]
+
+    cur.execute(
+        """
+        SELECT COUNT(*) AS total
         FROM scores
-    """).fetchone()["total"]
+        """
+    )
 
+    completed = cur.fetchone()["total"]
+
+    cur.close()
     conn.close()
 
     if assessments == 0:
         return 0
 
     return round((completed / assessments) * 100)
-   
