@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
-from database import (create_user, login_user, get_user, get_all_assessments,
-                      get_assessment, get_questions, save_response,
+from database import (create_user, login_user, get_user, get_question, get_all_assessments,
+                      get_assessment, get_questions, save_response, get_all_candidates,
                       already_attempted, get_candidate_responses, get_score)
 from scoring import calculate_and_save_score, get_rank_label
 from analytics import (
@@ -10,7 +10,7 @@ from analytics import (
 )
 import json
 import pandas as pd
-import sqlite3
+
 app = Flask(__name__)
 app.secret_key = 'recruitment_secret_2025'
 
@@ -138,48 +138,69 @@ def quiz(assessment_id):
 @app.route('/submit', methods=['POST'])
 def submit():
     guard = login_required('candidate')
-    if guard: return guard
+    if guard:
+        return guard
 
-    data          = request.get_json()
-    candidate_id  = session['user_id']
+    data = request.get_json()
+    candidate_id = session['user_id']
     assessment_id = data['assessment_id']
 
     if already_attempted(candidate_id, assessment_id):
         return jsonify({'status': 'already_submitted'})
 
-    # Get correct answers from DB to verify (never trust the client!)
-    questions = get_questions(assessment_id)
-    # Re-fetch without RANDOM so we can match by ID
-    import sqlite3
-    conn = sqlite3.connect('assessment.db')
-    conn.row_factory = sqlite3.Row
-    all_q = {row['id']: dict(row) for row in conn.execute(
-        "SELECT * FROM questions WHERE assessment_id=?", (assessment_id,)
-    ).fetchall()}
+    # Get correct answers from PostgreSQL
+    from database import get_conn, get_cursor
+
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        "SELECT * FROM questions WHERE assessment_id=%s",
+        (assessment_id,)
+    )
+
+    all_q = {
+        row['id']: dict(row)
+        for row in cur.fetchall()
+    }
+
+    cur.close()
     conn.close()
 
     for answer in data['answers']:
-        q_id     = answer['question_id']
-        selected = answer.get('selected')   # 'A','B','C','D' or None
+        q_id = answer['question_id']
+        selected = answer.get('selected')
         time_taken = answer.get('time_taken', 0)
-        q        = all_q.get(q_id)
+
+        q = all_q.get(q_id)
 
         if not q:
             continue
 
         if selected is None:
-            is_correct = None    # skipped
+            is_correct = None
         else:
             is_correct = 1 if selected == q['correct_option'] else 0
 
-        save_response(candidate_id, assessment_id, q_id,
-                      selected, is_correct, time_taken)
+        save_response(
+            candidate_id,
+            assessment_id,
+            q_id,
+            selected,
+            is_correct,
+            time_taken
+        )
 
     # Calculate and save the final score
-    calculate_and_save_score(candidate_id, assessment_id)
+    calculate_and_save_score(
+        candidate_id,
+        assessment_id
+    )
 
-    return jsonify({'status': 'ok',
-                    'redirect': f'/results/{assessment_id}'})
+    return jsonify({
+        'status': 'ok',
+        'redirect': f'/results/{assessment_id}'
+    })
 
 @app.route('/results/<int:assessment_id>')
 def results(assessment_id):
@@ -227,6 +248,34 @@ def delete_assessment_route(assessment_id):
 
 # ── RECRUITER ROUTES ──────────────────────────────────────────────────────
 
+@app.route('/recruiter/assessments')
+def recruiter_assessments():
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    assessments = get_all_assessments()
+
+    return render_template(
+        'recruiter_assessments.html',
+        assessments=assessments
+    )
+
+@app.route('/recruiter/candidates')
+def recruiter_candidates():
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    candidates = get_all_candidates()
+
+    return render_template(
+        'candidates.html',
+        candidates=candidates,
+        name=session['name']
+    )
+
+
 @app.route('/recruiter')
 def recruiter_home():
     guard = login_required('recruiter')
@@ -246,6 +295,8 @@ def recruiter_home():
     total_questions=get_total_questions(),
     completion_rate=get_completion_rate()
 )
+
+
 
 @app.route('/recruiter/question-bank')
 def question_bank():
@@ -324,6 +375,34 @@ def delete_question_bank(question_id):
 
     return redirect('/recruiter/question-bank')
 
+
+
+@app.route('/recruiter/question/<int:question_id>/delete')
+def delete_question(question_id):
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    from database import delete_question
+
+    question = get_question(question_id)
+
+    if not question:
+        return redirect('/recruiter')
+
+    assessment_id = question['assessment_id']
+
+    delete_question(question_id)
+
+    return redirect(
+        url_for(
+            'add_questions',
+            assessment_id=assessment_id
+        )
+    )
+
+
+
 @app.route('/recruiter/question-bank/edit/<int:question_id>',
            methods=['GET', 'POST'])
 def edit_question_bank(question_id):
@@ -373,29 +452,44 @@ def create_assessment():
         return redirect(url_for('add_questions', assessment_id=a_id))
     return render_template('create_assessment.html')
 
-@app.route('/recruiter/assessment/<int:assessment_id>/add-questions', methods=['GET','POST'])
+@app.route('/recruiter/assessment/<int:assessment_id>/add-questions', methods=['GET', 'POST'])
 def add_questions(assessment_id):
     guard = login_required('recruiter')
-    if guard: return guard
+    if guard:
+        return guard
+
     from database import add_question
+
+    assessment = get_assessment(assessment_id)
+
+    if not assessment:
+        return redirect(url_for('recruiter_home'))
+
     success = None
+
     if request.method == 'POST':
         add_question(
             assessment_id,
             request.form['question_text'],
-            request.form['option_a'], request.form['option_b'],
-            request.form['option_c'], request.form['option_d'],
+            request.form['option_a'],
+            request.form['option_b'],
+            request.form['option_c'],
+            request.form['option_d'],
             request.form['correct_option'],
             request.form['category'],
             request.form['difficulty']
         )
+
         success = 'Question added!'
-    assessment = get_assessment(assessment_id)
-    questions  = get_questions(assessment_id)
-    return render_template('add_questions.html',
-                           assessment=assessment,
-                           questions=questions,
-                           success=success)
+
+    questions = get_questions(assessment_id)
+
+    return render_template(
+        'add_questions.html',
+        assessment=assessment,
+        questions=questions,
+        success=success
+    )
 
 @app.route('/recruiter/question/<int:question_id>/edit', methods=['GET', 'POST'])
 def edit_question(question_id):
@@ -436,25 +530,27 @@ def import_questions(assessment_id):
     if guard:
         return guard
 
-    from database import (
-        get_question_bank,
-        get_conn
-    )
+    from database import get_question_bank, get_conn, get_cursor
 
     if request.method == 'POST':
-
         selected_ids = request.form.getlist('question_ids')
 
         conn = get_conn()
+        cur = get_cursor(conn)
 
         for qid in selected_ids:
-
-            q = conn.execute(
-                "SELECT * FROM question_bank WHERE id=?",
+            cur.execute(
+                "SELECT * FROM question_bank WHERE id=%s",
                 (qid,)
-            ).fetchone()
+            )
 
-            conn.execute("""
+            q = cur.fetchone()
+
+            if not q:
+                continue
+
+            cur.execute(
+                """
                 INSERT INTO questions
                 (
                     assessment_id,
@@ -467,21 +563,23 @@ def import_questions(assessment_id):
                     category,
                     difficulty
                 )
-                VALUES (?,?,?,?,?,?,?,?,?)
-            """,
-            (
-                assessment_id,
-                q['question_text'],
-                q['option_a'],
-                q['option_b'],
-                q['option_c'],
-                q['option_d'],
-                q['correct_option'],
-                q['category'],
-                q['difficulty']
-            ))
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    assessment_id,
+                    q['question_text'],
+                    q['option_a'],
+                    q['option_b'],
+                    q['option_c'],
+                    q['option_d'],
+                    q['correct_option'],
+                    q['category'],
+                    q['difficulty']
+                )
+            )
 
         conn.commit()
+        cur.close()
         conn.close()
 
         return redirect(
@@ -496,6 +594,23 @@ def import_questions(assessment_id):
         assessment=assessment,
         questions=questions
     )
+
+
+@app.route('/recruiter/assessment/<int:assessment_id>')
+def view_assessment(assessment_id):
+    guard = login_required('recruiter')
+    if guard:
+        return guard
+
+    assessment = get_assessment(assessment_id)
+    questions = get_questions(assessment_id)
+
+    return render_template(
+        'view_assessment.html',
+        assessment=assessment,
+        questions=questions
+    )
+
 
 @app.route('/recruiter/assessment/<int:assessment_id>/candidates')
 def view_candidates(assessment_id):
@@ -589,25 +704,22 @@ def recruiter_analytics():
     if guard:
         return guard
 
-    conn = sqlite3.connect('assessment.db')
+    # Get assessments from PostgreSQL
+    assessments = get_all_assessments()
 
-    assessments = conn.execute("""
-        SELECT id, title
-        FROM assessments
-        ORDER BY id
-    """).fetchall()
+    selected_assessment = request.args.get(
+        "assessment_id",
+        type=int
+    )
 
-    selected_assessment = request.args.get("assessment_id", type=int)
-
+    # Select the first assessment by default
     if not selected_assessment and assessments:
-        selected_assessment = assessments[0][0]
+        selected_assessment = assessments[0]['id']
 
     analytics = {}
 
     if selected_assessment:
         analytics = get_recruiter_analytics(selected_assessment)
-
-    conn.close()
 
     return render_template(
         "analytics.html",

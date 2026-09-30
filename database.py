@@ -41,9 +41,9 @@ def create_user(name, email, password, role='candidate'):
         conn.commit()
         return True, "Account created!"
 
-    except psycopg2.IntegrityError:
+    except psycopg2.IntegrityError as e:
         conn.rollback()
-        return False, "Email already registered."
+        return False, f"Database error: {e}"
 
     finally:
         cur.close()
@@ -86,6 +86,24 @@ def get_user(user_id):
     conn.close()
 
     return dict(user) if user else None
+
+def get_all_candidates():
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute("""
+        SELECT id, name, email
+        FROM users
+        WHERE role = 'candidate'
+        ORDER BY name
+    """)
+
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return [dict(row) for row in rows]
 
 
 # ── ASSESSMENT FUNCTIONS ──────────────────────────────────────────────────
@@ -147,6 +165,7 @@ def create_assessment(title, description, created_by, time_limit=60):
     conn.commit()
     cur.close()
     conn.close()
+
 
     return assessment_id
 
@@ -554,6 +573,19 @@ def delete_question_from_bank(question_id):
 
     cur.execute(
         "DELETE FROM question_bank WHERE id=%s",
+        (question_id,)
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+def delete_question(question_id):
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        "DELETE FROM questions WHERE id=%s",
         (question_id,)
     )
 

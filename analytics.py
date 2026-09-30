@@ -1,26 +1,36 @@
-import sqlite3
 import pandas as pd
 import numpy as np
+from database import get_conn, get_cursor
 
-DB = 'assessment.db'
+conn = get_conn()
+cur = get_cursor(conn)
 
 def get_candidate_analytics(candidate_id, assessment_id):
     """
     Returns full analytics for ONE candidate on ONE assessment.
     Used by: candidate results page + recruiter individual view.
     """
-    conn = sqlite3.connect(DB)
+    conn = get_conn()
 
 
 
-    df = pd.read_sql_query('''
+    cur.execute(
+    '''
         SELECT r.is_correct, r.time_taken, r.selected_option,
                q.category, q.difficulty, q.correct_option
         FROM responses r
         JOIN questions q ON r.question_id = q.id
-        WHERE r.candidate_id = ? AND r.assessment_id = ?
-    ''', conn, params=(candidate_id, assessment_id))
+        WHERE r.candidate_id = %s
+          AND r.assessment_id = %s
+        ''',
+        (candidate_id, assessment_id)
+    )
 
+    rows = cur.fetchall()
+
+    df = pd.DataFrame(rows)
+
+    cur.close()
     conn.close()
 
     if df.empty:
@@ -225,13 +235,13 @@ def get_recruiter_analytics(assessment_id):
     Returns comparative analytics across ALL candidates for one assessment.
     Used by: recruiter Streamlit dashboard.
     """
-    conn = sqlite3.connect(DB)
+    conn = get_conn()
 
     scores_df = pd.read_sql_query('''
         SELECT s.*, u.name, u.email
         FROM scores s
         JOIN users u ON s.candidate_id = u.id
-        WHERE s.assessment_id = ?
+        WHERE s.assessment_id = %s
         ORDER BY s.percentage DESC
     ''', conn, params=(assessment_id,))
 
@@ -240,7 +250,7 @@ def get_recruiter_analytics(assessment_id):
                q.category, q.difficulty
         FROM responses r
         JOIN questions q ON r.question_id = q.id
-        WHERE r.assessment_id = ?
+        WHERE r.assessment_id = %s
     ''', conn, params=(assessment_id,))
 
     conn.close()
@@ -284,14 +294,14 @@ def get_recruiter_analytics(assessment_id):
 
 def get_percentile_rank(candidate_id, assessment_id):
     """Returns what % of other candidates this candidate beat."""
-    conn = sqlite3.connect(DB)
+    conn = get_conn()
     all_pct = pd.read_sql_query(
-        "SELECT percentage FROM scores WHERE assessment_id=?",
+        "SELECT percentage FROM scores WHERE assessment_id=%s",
         conn, params=(assessment_id,)
     )['percentage'].values
 
     my_pct = pd.read_sql_query(
-        "SELECT percentage FROM scores WHERE candidate_id=? AND assessment_id=?",
+        "SELECT percentage FROM scores WHERE candidate_id=%s AND assessment_id=%s",
         conn, params=(candidate_id, assessment_id)
     )['percentage'].values
 

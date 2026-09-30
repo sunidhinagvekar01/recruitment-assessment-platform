@@ -1,0 +1,76 @@
+{% extends "recruiter_base.html" %}
+
+{% block title %}Candidates — RecruitAssess{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">Candidates</h1>
+    <p class="page-sub">
+        View all registered candidates on your recruitment platform.
+    </p>
+</div>
+
+<div class="card">
+
+    {% if not candidates %}
+
+        <div class="empty-state">
+            <h3>No Candidates Yet</h3>
+            <p>
+                Candidates who register on the platform will appear here.
+            </p>
+        </div>
+
+    {% else %}
+
+        <div style="overflow-x:auto;">
+
+            <table class="table">
+
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for candidate in candidates %}
+
+                    <tr>
+
+                        <td>
+                            <strong>{{ candidate.name }}</strong>
+                        </td>
+
+                        <td>
+                            {{ candidate.email }}
+                        </td>
+
+                        <td>
+                            <a
+                                href="/recruiter/candidate/{{ candidate.id }}"
+                                class="btn btn-outline"
+                            >
+                                View
+                            </a>
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

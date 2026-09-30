@@ -1,0 +1,81 @@
+{% extends "recruiter_base.html" %}
+
+{% block title %}Assessments - RecruitAssess{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1 class="page-title">Assessments</h1>
+    <p class="page-sub">
+        Create, manage and review your recruitment assessments.
+    </p>
+</div>
+
+<div style="margin-bottom:24px;">
+    <a href="/recruiter/create" class="btn btn-primary">
+        + Create Assessment
+    </a>
+</div>
+
+{% if assessments %}
+
+    {% for a in assessments %}
+
+    <div class="card assessment-card">
+
+        <div>
+            <div class="assessment-title">
+                {{ a.title }}
+            </div>
+
+            <p style="color:#6B7280; margin-bottom:8px;">
+                {{ a.description or "No description available." }}
+            </p>
+
+            <p style="font-size:13px; color:#6B7280;">
+                {{ a.time_limit }} seconds per question
+
+            </p>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+
+            <a
+                href="/recruiter/assessment/{{ a.id }}"
+                class="btn btn-outline">
+                View
+            </a>
+
+            <a
+                href="/recruiter/assessment/{{ a.id }}/candidates"
+                class="btn btn-primary">
+                Candidates
+            </a>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+{% else %}
+
+    <div class="card empty-state">
+
+        <h3>No assessments yet</h3>
+
+        <p>
+            Create your first assessment to start evaluating candidates.
+        </p>
+
+        <a
+            href="/recruiter/create-assessment"
+            class="btn btn-primary">
+            + Create Assessment
+        </a>
+
+    </div>
+
+{% endif %}
+
+{% endblock %}
