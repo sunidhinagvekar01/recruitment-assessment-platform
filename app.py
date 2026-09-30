@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, session, url_for, jsonify
 from database import (create_user, login_user, get_user, get_question, get_all_assessments,
                       get_assessment, get_questions, save_response, get_all_candidates,
-                      already_attempted, get_candidate_responses, get_score)
+                      already_attempted, get_candidate_responses, get_score, ensure_attempts_table, attempt_started, start_attempt,)
 from scoring import calculate_and_save_score, get_rank_label
 from analytics import (
     get_candidate_analytics,
@@ -13,6 +13,11 @@ import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = 'recruitment_secret_2025'
+
+from database import ensure_attempts_table
+
+ensure_attempts_table()
+
 
 # ── HELPER ───────────────────────────────────────────────────────────────
 
@@ -90,50 +95,79 @@ def dashboard():
 @app.route('/candidate')
 def candidate_home():
     guard = login_required('candidate')
-    if guard: return guard
+    if guard:
+        return guard
+
     assessments = get_all_assessments()
-    completed   = []
+
     for a in assessments:
-        a['attempted'] = already_attempted(session['user_id'], a['id'])
-        if a['attempted']:
-            completed.append(a['id'])
-    return render_template('candidate_home.html',
-                           assessments=assessments,
-                           name=session['name'])
+        candidate_id = session['user_id']
+
+        # Assessment is unavailable once the candidate
+        # has either completed OR started it previously.
+        a['attempted'] = (
+            already_attempted(candidate_id, a['id'])
+            or attempt_started(candidate_id, a['id'])
+        )
+
+    return render_template(
+        'candidate_home.html',
+        assessments=assessments,
+        name=session['name']
+    )
 
 @app.route('/quiz/<int:assessment_id>')
 def quiz(assessment_id):
     guard = login_required('candidate')
-    if guard: return guard
+    if guard:
+        return guard
 
-    if already_attempted(session['user_id'], assessment_id):
-        return redirect(url_for('results', assessment_id=assessment_id))
+    candidate_id = session['user_id']
+
+    # If the candidate has already completed/submitted
+    # this assessment, send them to their results.
+    if already_attempted(candidate_id, assessment_id):
+        return redirect(
+            url_for('results', assessment_id=assessment_id)
+        )
+
+    # If the candidate has started this assessment before,
+    # they cannot start it again.
+    if attempt_started(candidate_id, assessment_id):
+        return redirect(url_for('candidate_home'))
 
     assessment = get_assessment(assessment_id)
-    questions  = get_questions(assessment_id)
+    questions = get_questions(assessment_id)
 
     if not questions:
         return redirect(url_for('candidate_home'))
 
-    # Pass questions to template as JSON (JavaScript reads it)
+    # IMPORTANT:
+    # Record the attempt BEFORE showing the first question.
+    # Therefore refreshing, closing the browser, or leaving
+    # the assessment consumes the attempt.
+    start_attempt(candidate_id, assessment_id)
+
     questions_json = json.dumps([{
-        'id':       q['id'],
-        'text':     q['question_text'],
+        'id': q['id'],
+        'text': q['question_text'],
         'options': {
             'A': q['option_a'],
             'B': q['option_b'],
             'C': q['option_c'],
             'D': q['option_d']
         },
-        'category':   q['category'],
+        'category': q['category'],
         'difficulty': q['difficulty'],
         'correct_option': q['correct_option']
     } for q in questions])
 
-    return render_template('quiz.html',
-                           assessment=assessment,
-                           questions_json=questions_json,
-                           total=len(questions))
+    return render_template(
+        'quiz.html',
+        assessment=assessment,
+        questions_json=questions_json,
+        total=len(questions)
+    )
 
 @app.route('/submit', methods=['POST'])
 def submit():
@@ -631,7 +665,8 @@ def recruiter_candidate_detail(candidate_id, assessment_id):
     assessment = get_assessment(assessment_id)
     score_row  = get_score(candidate_id, assessment_id)
     analytics  = get_candidate_analytics(candidate_id, assessment_id)
-    print(analytics["performance_trend"])
+
+
     from analytics import get_percentile_rank
     percentile = get_percentile_rank(candidate_id, assessment_id)
     responses  = get_candidate_responses(candidate_id, assessment_id)

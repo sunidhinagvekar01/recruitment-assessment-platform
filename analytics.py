@@ -11,7 +11,7 @@ def get_candidate_analytics(candidate_id, assessment_id):
     Used by: candidate results page + recruiter individual view.
     """
     conn = get_conn()
-
+    cur = get_cursor(conn)
 
 
     cur.execute(

@@ -19,6 +19,24 @@ def get_conn():
 def get_cursor(conn):
     return conn.cursor(cursor_factory=RealDictCursor)
 
+def ensure_attempts_table():
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS assessment_attempts (
+            id SERIAL PRIMARY KEY,
+            candidate_id INTEGER NOT NULL,
+            assessment_id INTEGER NOT NULL,
+            started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TIMESTAMP NULL,
+            UNIQUE(candidate_id, assessment_id)
+        )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -365,6 +383,67 @@ def already_attempted(candidate_id, assessment_id):
     conn.close()
 
     return row is not None
+
+
+def attempt_started(candidate_id, assessment_id):
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        SELECT id
+        FROM assessment_attempts
+        WHERE candidate_id=%s
+          AND assessment_id=%s
+        """,
+        (candidate_id, assessment_id)
+    )
+
+    row = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return row is not None
+
+
+def start_attempt(candidate_id, assessment_id):
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        INSERT INTO assessment_attempts
+        (candidate_id, assessment_id)
+        VALUES (%s, %s)
+        ON CONFLICT (candidate_id, assessment_id)
+        DO NOTHING
+        """,
+        (candidate_id, assessment_id)
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def complete_attempt(candidate_id, assessment_id):
+    conn = get_conn()
+    cur = get_cursor(conn)
+
+    cur.execute(
+        """
+        UPDATE assessment_attempts
+        SET completed_at = CURRENT_TIMESTAMP
+        WHERE candidate_id=%s
+          AND assessment_id=%s
+        """,
+        (candidate_id, assessment_id)
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 def get_candidate_responses(candidate_id, assessment_id):

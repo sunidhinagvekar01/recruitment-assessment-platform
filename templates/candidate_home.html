@@ -1,9 +1,96 @@
 {% extends "base.html" %}
 {% block title %}My Assessments{% endblock %}
+
+{% block head %}
+<style>
+.assessment-card {
+    background:#FFFFFF;
+    border:1px solid #DDE6D8;
+    border-radius:18px;
+    padding:24px 26px;
+    margin-bottom:18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:24px;
+    box-shadow:0 3px 12px rgba(47,62,52,0.05);
+    transition:all .2s ease;
+}
+
+.assessment-card:hover {
+    transform:translateY(-2px);
+    box-shadow:0 8px 20px rgba(47,62,52,0.09);
+}
+
+.assessment-info {
+    flex:1;
+}
+
+.assessment-title {
+    font-size:18px;
+    font-weight:700;
+    color:#2F3E34;
+    margin-bottom:7px;
+}
+
+.assessment-description {
+    font-size:13px;
+    color:#64748B;
+    margin-bottom:12px;
+}
+
+.assessment-meta {
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.assessment-action {
+    flex-shrink:0;
+}
+
+.candidate-header {
+    margin-bottom:28px;
+}
+
+.candidate-header h1 {
+    font-size:32px;
+    font-weight:700;
+    color:#2F3E34;
+    margin-bottom:6px;
+}
+
+.candidate-header p {
+    font-size:15px;
+    color:#64748B;
+}
+
+@media(max-width:600px) {
+    .assessment-card {
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .assessment-action {
+        width:100%;
+    }
+
+    .assessment-action .btn {
+        width:100%;
+        text-align:center;
+    }
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="container">
-  <h1 class="page-title">Welcome, {{ name }} 👋</h1>
-  <p class="page-sub">Select an assessment below to begin.</p>
+  <div class="candidate-header">
+  <div>
+    <h1>Welcome, {{ name }} 👋</h1>
+    <p>Select an assessment below to begin.</p>
+  </div>
+</div>
 
   {% if not assessments %}
     <div class="card" style="text-align:center;padding:48px">
@@ -13,22 +100,44 @@
   {% endif %}
 
   {% for a in assessments %}
-  <div class="card" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
-    <div>
-      <div style="font-size:17px;font-weight:600;margin-bottom:6px;color:#f1f5f9">{{ a.title }}</div>
-      <div style="font-size:13px;color:#64748b;margin-bottom:10px">{{ a.description or 'No description provided.' }}</div>
-      <span class="badge badge-blue">⏱ {{ a.time_limit }}s per question</span>
-      {% if a.attempted %}
-        <span class="badge badge-green" style="margin-left:8px">✓ Completed</span>
-      {% endif %}
-    </div>
-    <div>
-      {% if a.attempted %}
-        <a href="/results/{{ a.id }}" class="btn btn-outline btn-sm">View Results</a>
-      {% else %}
-        <a href="/quiz/{{ a.id }}" class="btn btn-primary btn-sm">Start Test →</a>
-      {% endif %}
-    </div>
+  <div class="assessment-card">
+    <div class="assessment-info">
+
+  <div class="assessment-title">
+    {{ a.title }}
+  </div>
+
+  <div class="assessment-description">
+    {{ a.description or 'No description provided.' }}
+  </div>
+
+  <div class="assessment-meta">
+    <span class="badge badge-blue">
+      ⏱ {{ a.time_limit }}s per question
+    </span>
+
+    {% if a.attempted %}
+      <span class="badge badge-green">
+        ✓ Completed
+      </span>
+    {% endif %}
+  </div>
+
+</div>
+    
+<div class="assessment-action">
+
+  {% if a.attempted %}
+    <a href="/results/{{ a.id }}" class="btn btn-outline btn-sm">
+      View Results
+    </a>
+  {% else %}
+    <a href="/quiz/{{ a.id }}" class="btn btn-primary btn-sm">
+      Start Test →
+    </a>
+  {% endif %}
+
+</div>
   </div>
   {% endfor %}
 </div>
