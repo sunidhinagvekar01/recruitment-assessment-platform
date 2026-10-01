@@ -3,51 +3,185 @@
 {% block title %}Upload Questions{% endblock %}
 
 {% block content %}
-<div class="container">
+<style>
+    .upload-page {
+        max-width: 1050px;
+        margin: 0 auto;
+        padding: 28px 20px 50px;
+        color: #20302b;
+    }
 
-    <h1 class="page-title">
-        Upload Questions to {{ assessment.title }}
-    </h1>
+    .upload-hero {
+        background: #839575;
+        border-radius: 18px;
+        padding: 30px 34px;
+        margin-bottom: 24px;
+        color: #ffffff !important;
+        box-shadow: 0 8px 24px rgba(50, 70, 55, 0.12);
+    }
 
-    <p>
-        Upload a CSV or Excel file and automatically add questions to this assessment.
-    </p>
+    .upload-hero h1,
+    .upload-hero p {
+        color: #ffffff !important;
+        margin: 0;
+    }
+
+    .upload-hero h1 {
+        font-size: 32px;
+        line-height: 1.2;
+        margin-bottom: 9px;
+    }
+
+    .upload-hero p {
+        font-size: 16px;
+        opacity: 0.96;
+    }
+
+    .upload-card {
+        background: #ffffff;
+        border: 1px solid #dce4d8;
+        border-radius: 18px;
+        padding: 30px;
+        box-shadow: 0 6px 20px rgba(40, 55, 45, 0.07);
+    }
+
+    .upload-label {
+        display: block;
+        color: #20302b !important;
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .upload-help {
+        color: #66736d !important;
+        font-size: 14px;
+        margin: 0 0 18px;
+    }
+
+    .file-box {
+        border: 2px dashed #b8c6b2;
+        border-radius: 14px;
+        padding: 24px;
+        background: #f8faf6;
+    }
+
+    .file-box input[type="file"] {
+        width: 100%;
+        color: #394842;
+        font-size: 15px;
+    }
+
+    .file-box input[type="file"]::file-selector-button {
+        border: 0;
+        border-radius: 9px;
+        padding: 10px 16px;
+        margin-right: 12px;
+        background: #839575;
+        color: #ffffff;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .upload-actions {
+        margin-top: 22px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .upload-btn {
+        border: 0;
+        border-radius: 10px;
+        padding: 12px 22px;
+        background: #718463;
+        color: #ffffff !important;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .upload-btn:hover {
+        background: #607452;
+    }
+
+    .success-box {
+        background: #e9f8ec;
+        border: 1px solid #9ed4a8;
+        color: #176329 !important;
+        border-radius: 12px;
+        padding: 13px 16px;
+        margin-bottom: 20px;
+        font-weight: 700;
+    }
+
+    .format-note {
+        color: #66736d !important;
+        font-size: 13px;
+        margin-top: 14px;
+    }
+</style>
+
+<div class="upload-page">
+
+    <div class="upload-hero">
+        <h1>Upload Questions</h1>
+        <p>
+            Add questions to <strong>{{ assessment.title }}</strong>
+            using a CSV or Excel file.
+        </p>
+    </div>
+
     {% if success %}
-    <div class="alert-success">
-        {{ success }}
+    <div class="success-box">
+        ✓ {{ success }}
     </div>
     {% endif %}
-    
-    <div class="card">
 
-        <form method="POST"
-              enctype="multipart/form-data">
+    <div class="upload-card">
 
-            <div style="margin-bottom:20px">
+        <form method="POST" enctype="multipart/form-data">
 
-                <label>Select CSV / Excel File</label>
+            <label class="upload-label" for="question-file">
+                Question file
+            </label>
 
-                <br><br>
+            <p class="upload-help">
+                Select a CSV or Excel file. The questions will be added
+                automatically to this assessment.
+            </p>
+
+            <div class="file-box">
 
                 <input
+                    id="question-file"
                     type="file"
                     name="file"
-                    accept=".csv,.xlsx"
+                    accept=".csv,.xlsx,.xls"
                     required
                 >
 
+                <div class="format-note">
+                    Required columns:
+                    question_text, option_a, option_b, option_c,
+                    option_d, correct_option, category, difficulty
+                </div>
+
             </div>
 
-            <button type="submit"
-                    class="btn btn-primary">
+            <div class="upload-actions">
 
-                Upload Questions
+                <button type="submit" class="upload-btn">
+                    Upload Questions
+                </button>
 
-            </button>
+            </div>
 
         </form>
 
     </div>
 
 </div>
+
 {% endblock %}
